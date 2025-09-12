@@ -1,95 +1,154 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { FaEnvelope, FaLock } from "react-icons/fa";
+import TapNav from "../components/Navbar";
 
 export default function Login() {
-  const [login, setLogin] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
+  const [role, setRole] = useState("student");
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
-  function validateLogin() {
-    const e = {};
-    if (!login.email) e.email = "Email is required";
-    if (!login.password) e.password = "Password is required";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
+  const handleLogin = (e) => {
+    e.preventDefault();
+    alert(`Login Successfully as ${role.toUpperCase()}`);
+  };
 
-  function handleLoginSubmit(evt) {
-    evt.preventDefault();
-    if (!validateLogin()) return;
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    alert(`Password reset for ${forgotEmail} with new password: ${newPassword}`);
+    setShowForgotModal(false);
+  };
 
-    // TODO: Connect to your backend API
-    console.log("Login Data:", login);
-    alert("Login submitted!");
-  }
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <TapNav />
 
-return (
-  <div
-    className="min-h-screen flex items-center justify-center bg-cover bg-center"
-    style={{ backgroundImage: "url('/images/img.jpg')",
-       backgroundSize: "100%", // Zoom out effect (smaller than cover)
-       backgroundRepeat: "no-repeat",
-     }}
-  >
-    <div className="flex flex-col justify-center items-center w-full max-w-md bg-purple-50 bg-opacity-90 px-8 py-10 rounded-xl shadow-lg">
-      {/* Logo */}
-      <div className="flex items-center mb-8">
-        <span className="text-purple-600 text-3xl mr-2">💡</span>
-        <h1 className="text-2xl font-bold text-purple-700">CampusEventHub</h1>
+      {/* Login Box */}
+      <div className="flex-grow flex justify-center items-center">
+        <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
+          <h2 className="text-2xl font-bold text-center mb-2">Welcome Back</h2>
+          <p className="text-gray-500 text-center mb-6">
+            Sign in to continue to CampusEventHub
+          </p>
+
+          {/* Login Form */}
+          <form onSubmit={handleLogin}>
+            {/* Email */}
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-700">Email address</label>
+              <input
+                type="email"
+                placeholder="you@your.university.edu"
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            {/* Password */}
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-700">Password</label>
+              <input
+                type="password"
+                placeholder="Enter your password"
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            {/* Role Dropdown */}
+            <div className="mb-4">
+              <label className="block mb-1 text-gray-700">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+                <option value="student">Student</option>
+                <option value="admin">Admin</option>
+                <option value="superadmin">Super Admin</option>
+              </select>
+            </div>
+
+            {/* Forgot password */}
+            <div className="flex justify-between items-center mb-4">
+              <button
+                type="button"
+                className="text-blue-600 hover:underline text-sm"
+                onClick={() => setShowForgotModal(true)}
+              >
+                Forgot your password?
+              </button>
+            </div>
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+            >
+              Log In
+            </button>
+          </form>
+
+          <p className="text-center mt-4 text-gray-600 text-sm">
+            Don’t have an account?{" "}
+            <a href="/signup" className="text-blue-600 hover:underline">
+              Sign up
+            </a>
+          </p>
+        </div>
       </div>
 
-      {/* Welcome Message */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Welcome</h2>
+      {/* Footer */}
+      <footer className="bg-white shadow-inner py-4 text-center text-gray-500 text-sm">
+        © 2025 CampusEventHub. All rights reserved.
+      </footer>
 
-      {/* Login Form */}
-      <form onSubmit={handleLoginSubmit} className="w-full space-y-5">
-        {/* Email */}
-        <div className="relative">
-          <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={login.email}
-            onChange={(e) => setLogin({ ...login, email: e.target.value })}
-            className={`w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-              errors.email ? "border-red-400" : "border-gray-300"
-            }`}
-          />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Reset Password</h3>
+            <form onSubmit={handleForgotPassword}>
+              <div className="mb-3">
+                <label className="block mb-1 text-gray-700">Email</label>
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  placeholder="Create new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="px-4 py-2 bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                >
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-
-        {/* Password */}
-        <div className="relative">
-          <FaLock className="absolute left-3 top-3 text-gray-400" />
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={login.password}
-            onChange={(e) => setLogin({ ...login, password: e.target.value })}
-            className={`w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-              errors.password ? "border-red-400" : "border-gray-300"
-            }`}
-          />
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-        </div>
-
-        {/* Login Button */}
-        <button
-          type="submit"
-          className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition"
-        >
-          Login
-        </button>
-      </form>
-
-      {/* Sign Up Link */}
-      <p className="mt-6 text-gray-600">
-        Don’t have an account?{" "}
-        <Link to="/register" className="text-purple-600 font-semibold hover:underline">
-          Sign Up
-        </Link>
-      </p>
+      )}
     </div>
-  </div>
-);
+  );
 }

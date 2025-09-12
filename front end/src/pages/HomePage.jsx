@@ -1,10 +1,10 @@
 import React from "react";
-import TopNav  from "../components/TapNav";
+import Navbar from "../components/Navbar.jsx";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-purple-50">
-      <TopNav />
+    <div className="min-h-screen bg-blue-50">
+      <Navbar />
       {/* Event Cards */}
       <main className="p-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
