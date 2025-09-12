@@ -17,11 +17,20 @@ const userSchema = new mongoose.Schema({
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
     validate: {
       validator: function(email) {
-        // Add validation for educational email domains
-        const eduDomains = ['.edu', '.ac.in'];
-        return eduDomains.some(domain => email.toLowerCase().endsWith(domain));
+        const allowedDomains = [
+          'gmail.com',
+          'outlook.com',
+          'yahoo.com',
+          'edu',
+          'ac.in'
+        ];
+        // Extract domain from email
+        const domain = email.split('@')[1];
+        return allowedDomains.some(allowedDomain => 
+          domain === allowedDomain || domain.endsWith('.' + allowedDomain)
+        );
       },
-      message: 'Please use a valid educational email address'
+      message: 'Please use a valid email address'
     }
   },
   password: {
@@ -57,10 +66,6 @@ const userSchema = new mongoose.Schema({
   },
   passwordChangedAt: Date
 });
-
-// Index for faster queries
-userSchema.index({ email: 1 });
-userSchema.index({ college: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

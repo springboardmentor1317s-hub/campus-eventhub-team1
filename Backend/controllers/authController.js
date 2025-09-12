@@ -43,7 +43,13 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ error: 'Server error. Please try again later.' });
+    // Log more detailed error information
+    if (error.errors) {
+      Object.keys(error.errors).forEach(key => {
+        console.error(`${key}:`, error.errors[key].message);
+      });
+    }
+    res.status(500).json({ error: error.message || 'Server error. Please try again later.' });
   }
 };
 
@@ -51,8 +57,8 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ email });
+    // Check if user exists - explicitly select password field
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -66,16 +72,19 @@ exports.login = async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
+    // Remove password from response
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      college: user.college,
+      role: user.role
+    };
+
     res.status(200).json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        college: user.college,
-        role: user.role
-      }
+      user: userResponse
     });
   } catch (error) {
     console.error('Login error:', error);
