@@ -1,177 +1,95 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { FaEnvelope, FaLock } from "react-icons/fa";
 
-export const Login = () => {
-  return (
-    <div
-      className="bg-[var(--background-color)] min-h-screen flex"
-      style={{
-        fontFamily: '"Plus Jakarta Sans", "Noto Sans", sans-serif',
-      }}
-    >
-      {/* Left Section */}
-      <div className="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div className="mx-auto w-full max-w-sm lg:w-96">
-          <div>
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-8 text-[var(--primary-color)]">
-                <svg
-                  fill="none"
-                  viewBox="0 0 48 48"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clipPath="url(#clip0_6_535)">
-                    <path
-                      clipRule="evenodd"
-                      d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
-                      fill="currentColor"
-                      fillRule="evenodd"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_6_535">
-                      <rect fill="white" height="48" width="48" />
-                    </clipPath>
-                  </defs>
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight text-[var(--primary-text-color)]">
-                Campus Connect
-              </h1>
-            </div>
-            <h2 className="text-3xl font-extrabold text-[var(--primary-text-color)]">
-              Sign in to your account
-            </h2>
-            <p className="mt-2 text-sm text-[var(--secondary-text-color)]">
-              Or{" "}
-              <a
-                className="font-medium text-[var(--primary-color)] hover:text-red-500"
-                href="#"
-              >
-                register for a new account
-              </a>
-            </p>
-          </div>
+export default function Login() {
+  const [login, setLogin] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
 
-          <div className="mt-8">
-            <div className="mt-6">
-              <form className="space-y-6" method="POST" action="#">
-                {/* Email */}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-[var(--primary-text-color)]"
-                  >
-                    Email address
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      autoComplete="email"
-                      placeholder="you@example.com"
-                      className="form-input block w-full appearance-none rounded-md border-0 bg-[var(--input-bg-color)] px-3 py-3 placeholder-[var(--input-placeholder-color)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 sm:text-sm text-[var(--primary-text-color)]"
-                    />
-                  </div>
-                </div>
+  function validateLogin() {
+    const e = {};
+    if (!login.email) e.email = "Email is required";
+    if (!login.password) e.password = "Password is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
 
-                {/* Password */}
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-[var(--primary-text-color)]"
-                  >
-                    Password
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      required
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                      className="form-input block w-full appearance-none rounded-md border-0 bg-[var(--input-bg-color)] px-3 py-3 placeholder-[var(--input-placeholder-color)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2 sm:text-sm text-[var(--primary-text-color)]"
-                    />
-                  </div>
-                </div>
+  function handleLoginSubmit(evt) {
+    evt.preventDefault();
+    if (!validateLogin()) return;
 
-                {/* Forgot Password */}
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <a
-                      href="#"
-                      className="font-medium text-[var(--primary-color)] hover:text-red-500"
-                    >
-                      Forgot your password?
-                    </a>
-                  </div>
-                </div>
+    // TODO: Connect to your backend API
+    console.log("Login Data:", login);
+    alert("Login submitted!");
+  }
 
-                {/* Role Selection */}
-                <div className="flex items-center justify-center space-x-4 pt-2">
-                  <p className="text-sm font-medium text-[var(--primary-text-color)]">
-                    Login as:
-                  </p>
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="student"
-                      name="role"
-                      defaultChecked
-                      className="h-4 w-4 border-gray-300 text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
-                    />
-                    <label
-                      htmlFor="student"
-                      className="ml-2 block text-sm text-[var(--secondary-text-color)]"
-                    >
-                      Student
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="admin"
-                      name="role"
-                      className="h-4 w-4 border-gray-300 text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
-                    />
-                    <label
-                      htmlFor="admin"
-                      className="ml-2 block text-sm text-[var(--secondary-text-color)]"
-                    >
-                      Admin
-                    </label>
-                  </div>
-                </div>
+return (
+  <div
+    className="min-h-screen flex items-center justify-center bg-cover bg-center"
+    style={{ backgroundImage: "url('/images/img.jpg')",
+       backgroundSize: "100%", // Zoom out effect (smaller than cover)
+       backgroundRepeat: "no-repeat",
+     }}
+  >
+    <div className="flex flex-col justify-center items-center w-full max-w-md bg-purple-50 bg-opacity-90 px-8 py-10 rounded-xl shadow-lg">
+      {/* Logo */}
+      <div className="flex items-center mb-8">
+        <span className="text-purple-600 text-3xl mr-2">💡</span>
+        <h1 className="text-2xl font-bold text-purple-700">CampusEventHub</h1>
+      </div>
 
-                {/* Submit Button */}
-                <div>
-                  <button
-                    type="submit"
-                    className="flex w-full justify-center rounded-md border border-transparent bg-[var(--primary-color)] py-3 px-4 text-base font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2"
-                  >
-                    <span className="material-symbols-outlined mr-2">
-                      login
-                    </span>
-                    Sign in
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+      {/* Welcome Message */}
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Welcome</h2>
+
+      {/* Login Form */}
+      <form onSubmit={handleLoginSubmit} className="w-full space-y-5">
+        {/* Email */}
+        <div className="relative">
+          <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={login.email}
+            onChange={(e) => setLogin({ ...login, email: e.target.value })}
+            className={`w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              errors.email ? "border-red-400" : "border-gray-300"
+            }`}
+          />
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
         </div>
-      </div>
 
-      {/* Right Section (Image) */}
-      <div className="relative hidden w-0 flex-1 lg:block">
-        <img
-          className="absolute inset-0 h-full w-full object-cover"
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuB66gapLjZcnasUyehr_fEfHPMNPeBK1s7XIKmw5HciuYLPBROJnyBbHhBdd1SYg_iiAFPlhqOIeMZrMstya431OLPNUnwuUq8_2zjBKj0Cx27ZwqjY9_UWaP12CoabOjH96Ll9NSqvgW0Nf27WyEh5gfYuFjg_83qAYn52qRdd-rJpwzk6u84Zi6TP7dC1QWQJfcUYtnPggnLuUpQr4Nu1UMFDNXgradeEO9lv2WzV-WfQlERE-2VL74nYgB-Ofco7ILmn-RHswUPB"
-          alt="University campus"
-        />
-        <div className="absolute inset-0 bg-[var(--primary-color)] opacity-30"></div>
-      </div>
+        {/* Password */}
+        <div className="relative">
+          <FaLock className="absolute left-3 top-3 text-gray-400" />
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={login.password}
+            onChange={(e) => setLogin({ ...login, password: e.target.value })}
+            className={`w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              errors.password ? "border-red-400" : "border-gray-300"
+            }`}
+          />
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+        </div>
+
+        {/* Login Button */}
+        <button
+          type="submit"
+          className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition"
+        >
+          Login
+        </button>
+      </form>
+
+      {/* Sign Up Link */}
+      <p className="mt-6 text-gray-600">
+        Don’t have an account?{" "}
+        <Link to="/register" className="text-purple-600 font-semibold hover:underline">
+          Sign Up
+        </Link>
+      </p>
     </div>
-  );
-};
+  </div>
+);
+}
