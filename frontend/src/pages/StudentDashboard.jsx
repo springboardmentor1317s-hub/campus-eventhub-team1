@@ -4,102 +4,88 @@ import { useAuth } from '../context/AuthContext';
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('upcoming');
-  const [events, setEvents] = useState([]);
+  const [stats, setStats] = useState({
+    registeredEvents: 0,
+    upcomingEvents: 0,
+    completedEvents: 0,
+    certificates: 0
+  });
   const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    // Simulated data - in production, this would be an API call
-    const fetchEvents = async () => {
-      try {
-        // In a real app, you would fetch from your API
-        // const response = await fetch('http://localhost:4000/api/events');
-        // const data = await response.json();
-        
-        // Simulate API data
-        setTimeout(() => {
-          setEvents([
-            {
-              id: 1,
-              title: 'Annual Tech Hackathon',
-              college: 'IIT Bombay',
-              date: '2024-08-15',
-              category: 'hackathon',
-              description: 'A 24-hour coding competition to solve real-world problems.',
-              registrationOpen: true,
-              registered: false
-            },
-            {
-              id: 2,
-              title: 'Cultural Fest 2024',
-              college: 'Delhi University',
-              date: '2024-09-05',
-              category: 'cultural',
-              description: 'Annual cultural festival with music, dance, and art competitions.',
-              registrationOpen: true,
-              registered: true
-            },
-            {
-              id: 3,
-              title: 'Science Symposium',
-              college: 'IIT Delhi',
-              date: '2024-07-20',
-              category: 'academic',
-              description: 'Research presentations and discussions on emerging technologies.',
-              registrationOpen: true,
-              registered: false
-            },
-            {
-              id: 4,
-              title: 'Inter-College Basketball Tournament',
-              college: 'SRM University',
-              date: '2024-08-10',
-              category: 'sports',
-              description: 'Annual basketball tournament with teams from colleges across the country.',
-              registrationOpen: false,
-              registered: false
-            }
-          ]);
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-        setLoading(false);
-      }
-    };
+    // Simulate fetching stats and events
+    setTimeout(() => {
+      setStats({
+        registeredEvents: 5,
+        upcomingEvents: 3,
+        completedEvents: 2,
+        certificates: 2
+      });
+      
+      setEvents([
+        {
+          id: 1,
+          title: 'Annual Tech Hackathon',
+          college: 'IIT Bombay',
+          date: '2024-02-15',
+          category: 'hackathon',
+          status: 'registered'
+        },
+        {
+          id: 2,
+          title: 'Cultural Fest 2024',
+          college: 'Delhi University',
+          date: '2024-03-01',
+          category: 'cultural',
+          status: 'upcoming'
+        },
+        // Add more sample events as needed
+      ]);
 
-    fetchEvents();
+      setLoading(false);
+    }, 1000);
   }, []);
-
-  const handleRegister = (eventId) => {
-    // In a real app, this would be an API call to register for the event
-    setEvents(events.map(event => 
-      event.id === eventId ? { ...event, registered: true } : event
-    ));
-  };
-
-  const filteredEvents = activeTab === 'upcoming' 
-    ? events.filter(event => !event.registered)
-    : events.filter(event => event.registered);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation Bar */}
-      <nav className="bg-white shadow-md">
+      {/* Top Navigation */}
+      <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-indigo-600">CampusEventHub</h1>
+              <div className="flex-shrink-0 flex items-center">
+                <h1 className="text-xl font-bold text-indigo-600">CampusEventHub</h1>
+              </div>
+              <div className="hidden md:ml-8 md:flex md:space-x-8">
+                <a href="#" className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium">
+                  Dashboard
+                </a>
+                <a href="#" className="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                  Browse Events
+                </a>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Hello, {currentUser?.name}
-              </span>
-              <button 
-                onClick={logout}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
-              >
-                Logout
+              <button className="p-2 text-gray-400 hover:text-gray-500">
+                <span className="sr-only">View notifications</span>
+                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
               </button>
+              <div className="flex items-center space-x-3">
+                <img className="h-8 w-8 rounded-full" src={`https://ui-avatars.com/api/?name=${currentUser?.name}&background=6366f1&color=fff`} alt="" />
+                <div className="hidden md:flex md:flex-col md:items-start">
+                  <span className="text-sm font-medium text-gray-700">{currentUser?.name}</span>
+                  <span className="text-xs text-gray-500">{currentUser?.college}</span>
+                </div>
+                <button 
+                  onClick={logout}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -107,19 +93,119 @@ const StudentDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="md:flex md:items-center md:justify-between mb-6">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              Student Dashboard
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Browse and register for events happening across colleges
-            </p>
+        {/* Dashboard Header */}
+        <div className="md:flex md:items-center md:justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">Student Dashboard</h2>
+            <p className="mt-1 text-sm text-gray-500">Manage your event registrations and participations</p>
+          </div>
+          <div className="mt-4 md:mt-0">
+            <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+              <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Find Events
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          {/* Registered Events */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="bg-blue-100 rounded-md p-3">
+                    <svg className="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Registered Events</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">{stats.registeredEvents}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming Events */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="bg-green-100 rounded-md p-3">
+                    <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Upcoming Events</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">{stats.upcomingEvents}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Completed Events */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="bg-purple-100 rounded-md p-3">
+                    <svg className="h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Completed Events</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">{stats.completedEvents}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Certificates */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="bg-orange-100 rounded-md p-3">
+                    <svg className="h-6 w-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Certificates Earned</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">{stats.certificates}</div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
+        <div className="border-b border-gray-200 mb-8">
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('upcoming')}
@@ -139,75 +225,59 @@ const StudentDashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Registered Events
+              My Registrations
+            </button>
+            <button
+              onClick={() => setActiveTab('completed')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'completed'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Completed Events
             </button>
           </nav>
         </div>
 
-        {/* Events List */}
+        {/* Events Grid */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">
-              {activeTab === 'upcoming' 
-                ? 'No upcoming events available at the moment.' 
-                : 'You have not registered for any events yet.'}
-            </p>
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEvents.map((event) => (
-              <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
-                <div className={`h-2 ${
-                  event.category === 'hackathon' ? 'bg-purple-500' :
-                  event.category === 'cultural' ? 'bg-pink-500' :
-                  event.category === 'academic' ? 'bg-blue-500' :
-                  event.category === 'sports' ? 'bg-green-500' : 'bg-gray-500'
-                }`}></div>
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-2">
+            {events.map((event) => (
+              <div key={event.id} className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      event.category === 'hackathon' ? 'bg-purple-100 text-purple-800' :
-                      event.category === 'cultural' ? 'bg-pink-100 text-pink-800' :
-                      event.category === 'academic' ? 'bg-blue-100 text-blue-800' :
-                      event.category === 'sports' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      event.status === 'registered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
-                      {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
+                      {event.status === 'registered' ? 'Registered' : 'Open'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mb-2">Hosted by {event.college}</p>
-                  <p className="text-sm text-gray-700 mb-3">{event.description}</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="text-sm text-gray-600">
-                      <svg className="h-4 w-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"></path>
-                      </svg>
-                      {new Date(event.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </div>
-                    {activeTab === 'upcoming' ? (
-                      <button
-                        onClick={() => handleRegister(event.id)}
-                        className={`px-4 py-1.5 rounded text-sm font-medium ${
-                          event.registrationOpen 
-                            ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                            : 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                        }`}
-                        disabled={!event.registrationOpen}
-                      >
-                        {event.registrationOpen ? 'Register' : 'Closed'}
-                      </button>
-                    ) : (
-                      <span className="px-4 py-1.5 bg-green-100 text-green-800 rounded text-sm font-medium">
-                        Registered
-                      </span>
-                    )}
+                  <div className="text-sm text-gray-500 mb-4">
+                    <p>Hosted by {event.college}</p>
+                    <p className="mt-1">
+                      {new Date(event.date).toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      className={`px-4 py-2 text-sm font-medium rounded-md ${
+                        event.status === 'registered'
+                          ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                          : 'text-white bg-indigo-600 hover:bg-indigo-700'
+                      }`}
+                    >
+                      {event.status === 'registered' ? 'View Details' : 'Register Now'}
+                    </button>
                   </div>
                 </div>
               </div>

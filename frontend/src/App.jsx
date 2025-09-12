@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/login';
 import StudentDashboard from './pages/StudentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Register from './pages/Register';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Protected Route Component for any authenticated user
@@ -69,6 +70,7 @@ const AppRoutes = () => {
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       
       {/* Root route - redirect based on role */}
       <Route 

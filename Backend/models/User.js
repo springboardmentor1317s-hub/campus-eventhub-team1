@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Name is required'],
     trim: true,
+    maxLength: [50, 'Name cannot be more than 50 characters']
   },
   email: {
     type: String,
@@ -14,27 +15,52 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true,
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
+    validate: {
+      validator: function(email) {
+        // Add validation for educational email domains
+        const eduDomains = ['.edu', '.ac.in'];
+        return eduDomains.some(domain => email.toLowerCase().endsWith(domain));
+      },
+      message: 'Please use a valid educational email address'
+    }
   },
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: [6, 'Password must be at least 6 characters long'],
+    minlength: [8, 'Password must be at least 8 characters long'],
+    select: false // Don't return password in queries by default
   },
   college: {
     type: String,
     required: [true, 'College name is required'],
     trim: true,
+    maxLength: [100, 'College name cannot be more than 100 characters']
   },
   role: {
     type: String,
-    enum: ['student', 'college_admin', 'super_admin'],
-    default: 'student',
+    enum: {
+      values: ['student', 'college_admin', 'super_admin'],
+      message: '{VALUE} is not a valid role'
+    },
+    default: 'student'
   },
   createdAt: {
     type: Date,
-    default: Date.now,
-  }
+    default: Date.now
+  },
+  lastLogin: {
+    type: Date
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  passwordChangedAt: Date
 });
+
+// Index for faster queries
+userSchema.index({ email: 1 });
+userSchema.index({ college: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -45,6 +71,9 @@ userSchema.pre('save', async function(next) {
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    
+    // Update passwordChangedAt field
+    this.passwordChangedAt = Date.now() - 1000;
     next();
   } catch (error) {
     next(error);
@@ -54,6 +83,15 @@ userSchema.pre('save', async function(next) {
 // Method to compare passwords
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to check if password was changed after token was issued
+userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
 };
 
 const User = mongoose.model('User', userSchema);
