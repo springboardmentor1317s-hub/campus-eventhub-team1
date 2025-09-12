@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --checkbox-tick-svg: url('data:image/svg+xml,%3csvg viewBox=%270 0 16 16%27 fill=%27rgb(255,255,255)%27 xmlns=%27http://www.w3.org/2000/svg%27%3e%3cpath d=%27M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z%27/%3e%3c/svg%3e');
+        --select-button-svg: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724px%27 height=%2724px%27 fill=%27rgb(107, 114, 128)%27 viewBox=%270 0 256 256%27%3e%3cpath d=%27M215.39,92.61a8,8,0,0,0-11.32,0L128,168.69,51.94,92.61a8,8,0,0,0-11.32,11.31l80,80a8,8,0,0,0,11.32,0l80-80A8,8,0,0,0,215.39,92.61Z%27%3e%3c/path%3e%3c/svg%3e');
+      }
+    </style>
+</head>
+<body class="relative flex size-full min-h-screen flex-col bg-slate-50 group/design-root" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-10 py-3">
+<div class="flex items-center gap-4 text-slate-800">
+<div class="size-8 text-[#1173d4]">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-slate-800 text-lg font-bold leading-tight tracking-[-0.015em]">CampusEventHub</h2>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<nav class="flex items-center gap-2">
+<a class="rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900" href="#">Dashboard</a>
+<a class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 transition-colors" href="#">Events</a>
+<a class="rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900" href="#">Calendar</a>
+<a class="rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900" href="#">Analytics</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-800">
+<span class="material-symbols-outlined text-2xl"> notifications </span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCFONV2Ra7Bm2QtTFtm5RmFUydIoRdYs5u5YYwSnHo56hHZgsbticwSA8eptA3VdEVqvcClhHnDoKFe79OwXEK1vFfXBNtD1aoht8PpgSENo99Szr49b1ktCgV5UtF4quCyjl-he9KzSaZC4AB3tvtmqjSa1TAUWlQc_ymBNLCmSnUxQ9QMkRw6XCnIef-yPGenqidsiXf2y8SNYgvfxse6gKU7eh6HNiYkrKT56xWBG3_jbWOiwys_XDTaVDNnEWJ8m7UaKgKboA");'></div>
+</div>
+</div>
+</header>
+<main class="flex flex-1 justify-center py-10">
+<div class="w-full max-w-2xl">
+<div class="mb-8">
+<div class="flex items-center gap-2 text-sm">
+<a class="text-slate-500 hover:text-slate-700" href="#">Events</a>
+<span class="text-slate-400">/</span>
+<span class="font-medium text-slate-800">Create Event</span>
+</div>
+<h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Create New Event</h1>
+</div>
+<div class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+<div class="space-y-6">
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="event-title">Event Title</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="event-title" placeholder="e.g. Annual Tech Conference" value=""/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="event-description">Event Description</label>
+<textarea class="form-textarea flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] min-h-28 placeholder:text-slate-400 p-3 text-sm font-normal" id="event-description" placeholder="Provide a brief description of the event"></textarea>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="start-date">Start Date</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="start-date" type="date"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="end-date">End Date</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="end-date" type="date"/>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="start-time">Start Time</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="start-time" type="time"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="end-time">End Time</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="end-time" type="time"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="location">Location</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="location" placeholder="e.g. University Auditorium" value=""/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="category">Category</label>
+<select class="form-select flex w-full min-w-0 flex-1 appearance-none resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 bg-[image:--select-button-svg] bg-right bg-no-repeat placeholder:text-slate-400 px-3 text-sm font-normal" id="category">
+<option disabled="" selected="" value="">Select a category</option>
+<option value="academic">Academic</option>
+<option value="cultural">Cultural</option>
+<option value="sports">Sports</option>
+<option value="workshop">Workshop</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-700" for="registration-limit">Registration Limit <span class="text-slate-500">(Optional)</span></label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md text-slate-900 focus:outline-0 focus:ring-2 focus:ring-[#1173d4]/50 border border-slate-300 bg-white focus:border-[#1173d4] h-10 placeholder:text-slate-400 px-3 text-sm font-normal" id="registration-limit" placeholder="e.g. 100" type="number" value=""/>
+</div>
+<div class="flex items-center gap-x-3 pt-2">
+<input class="h-4 w-4 rounded border-slate-300 bg-slate-100 text-[#1173d4] checked:bg-[#1173d4] checked:border-transparent checked:bg-[image:--checkbox-tick-svg] focus:ring-2 focus:ring-offset-0 focus:ring-[#1173d4]/50" id="require-approval" type="checkbox"/>
+<label class="text-sm font-medium text-slate-700" for="require-approval">Require event approval before publishing</label>
+</div>
+</div>
+<div class="mt-8 flex justify-end gap-3">
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-10 px-4 bg-slate-100 text-slate-700 text-sm font-semibold leading-normal tracking-[-0.015em] transition-colors hover:bg-slate-200">
+<span class="truncate">Cancel</span>
+</button>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-10 px-4 bg-[#1173d4] text-white text-sm font-semibold leading-normal tracking-[-0.015em] transition-colors hover:bg-[#1173d4]/90">
+<span class="truncate">Create Event</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

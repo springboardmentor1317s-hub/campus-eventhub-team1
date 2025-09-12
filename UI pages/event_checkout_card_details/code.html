@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<title>CampusEventHub - Checkout</title>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B600%3B700&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --primary-color: #1173d4;
+      }
+    </style>
+</head>
+<body class="bg-gray-50" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-gray-200 px-10 py-4">
+<div class="flex items-center gap-4 text-slate-800">
+<div class="size-6 text-[var(--primary-color)]">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h1 class="text-slate-800 text-xl font-bold leading-tight">CampusEventHub</h1>
+</div>
+<nav class="flex flex-1 justify-center gap-8">
+<a class="text-gray-600 hover:text-slate-800 text-sm font-medium leading-normal" href="#">Home</a>
+<a class="text-slate-800 text-sm font-semibold leading-normal" href="#">Events</a>
+<a class="text-gray-600 hover:text-slate-800 text-sm font-medium leading-normal" href="#">Organizations</a>
+<a class="text-gray-600 hover:text-slate-800 text-sm font-medium leading-normal" href="#">Tickets</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-slate-800">
+<span class="material-symbols-outlined"> notifications </span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCZNxR-jxd4QtTe8bGd91oWMDboUzZ0PVfqzzEvf4O3qh4QKuVn_Nr4bJP4S3CRc5zdIWFZ9oVGGKY2AR-0fe5eFl1oV3YF7fAe-DU3yveMeBumDUtmz2sOCvOHAUQG4V0JYd3-FdHxuxitE5e4MEC_M9_ouyd4M_V361UeQvQzG9XdfnBH1CyllrU4f-Xi9vIVVLgiq0HQxK-TKfEW5ATl_GEfKn7HzDWcuyN_lzO5aFv9BvnbOPcBo6uRlrcrIY0A1d3V5LELkA");'></div>
+</div>
+</header>
+<main class="flex-1 bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+<div class="mx-auto max-w-lg">
+<div class="bg-white rounded-xl shadow-lg">
+<div class="px-6 py-8 sm:px-10">
+<div class="text-center">
+<h2 class="text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">Checkout</h2>
+<p class="mt-2 text-sm text-gray-500">Confirm your registration details</p>
+</div>
+<div class="mt-8">
+<div class="flex flex-col sm:flex-row items-start gap-6">
+<div class="w-full sm:w-2/3">
+<h3 class="text-lg font-semibold text-slate-800">Inter-College Debate Championship</h3>
+<div class="mt-2 space-y-1 text-sm text-gray-500">
+<p class="flex items-center gap-2"><span class="material-symbols-outlined text-base">event</span> <span>October 26, 2024</span></p>
+<p class="flex items-center gap-2"><span class="material-symbols-outlined text-base">schedule</span> <span>10:00 AM - 6:00 PM</span></p>
+<p class="flex items-center gap-2"><span class="material-symbols-outlined text-base">location_on</span> <span>University Auditorium</span></p>
+</div>
+</div>
+<div class="w-full sm:w-1/3">
+<div class="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden">
+<div class="w-full h-full bg-center bg-cover" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCg5gKSR7TLMtkkkl2Y0VO2cEx1AQ7ZY3xSkj_n2gKqCAPGiOa2gPfpKQ0E95HM1uQWJAs0bksdwJz4133F8MqS0OkUvBLkfr6-smdKqLB6QFh9g6_XYlACwcibekYqQ1KDh_DOsIQytn_4Pj14k6hye8J_oXmQNvEXH2BQGdMLqZG5lZduEO4ppUmwD3krgF-UIu_p34m5ofOaaHrXx2rlF8pFja-ZiPqP0FMe5cTrAcE-K6s9iazeZQQEnsVuR2kT0Rlkig8bGg");'></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 border-t border-gray-200 pt-8">
+<h3 class="text-lg font-semibold text-slate-800">Order Summary</h3>
+<div class="mt-4 space-y-2">
+<div class="flex justify-between text-sm text-gray-600">
+<p>Ticket Price</p>
+<p class="font-medium text-slate-800">$20.00</p>
+</div>
+<div class="flex justify-between text-sm text-gray-600">
+<p>Service Fee</p>
+<p class="font-medium text-slate-800">$2.00</p>
+</div>
+</div>
+<form class="mt-6 flex items-end gap-3">
+<label class="flex-1" for="coupon-code">
+<span class="block text-sm font-medium text-gray-700">Coupon Code</span>
+<input class="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[var(--primary-color)] focus:ring-[var(--primary-color)] sm:text-sm" id="coupon-code" placeholder="Enter code" type="text"/>
+</label>
+<button class="rounded-md border border-transparent bg-gray-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2" type="submit">
+                      Apply
+                    </button>
+</form>
+<div class="mt-6 flex justify-between border-t border-gray-200 pt-4 text-base font-semibold text-slate-800">
+<p>Total</p>
+<p>$22.00</p>
+</div>
+</div>
+<div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+<button class="w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2" type="button">
+                    Cancel
+                  </button>
+<button class="w-full justify-center rounded-md border border-transparent bg-[var(--primary-color)] px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2" type="button">
+                    Confirm Registration
+                  </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+</body></html>
