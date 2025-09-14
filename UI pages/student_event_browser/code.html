@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<title>CampusEventHub - Event Dashboard</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --primary-color: #1173d4;
+      }
+      .group:hover .group-hover\:block {
+        display: block;
+      }
+    </style>
+</head>
+<body class="bg-gray-50" style='font-family: Inter, "Noto Sans", sans-serif;'>
+<div class="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 bg-white px-10 py-3">
+<div class="flex items-center gap-8">
+<a class="flex items-center gap-3 text-xl font-bold text-gray-800" href="#">
+<span class="material-symbols-outlined text-[var(--primary-color)] text-3xl"> school </span>
+<span>CampusEventHub</span>
+</a>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-gray-600 hover:text-[var(--primary-color)] text-sm font-medium" href="#">Home</a>
+<a class="text-[var(--primary-color)] text-sm font-bold" href="#">Events</a>
+<a class="text-gray-600 hover:text-[var(--primary-color)] text-sm font-medium" href="#">My Events</a>
+<a class="text-gray-600 hover:text-[var(--primary-color)] text-sm font-medium" href="#">Profile</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"> search </span>
+<input class="form-input w-full rounded-full border-gray-300 bg-gray-100 py-2 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:border-[var(--primary-color)] focus:ring-[var(--primary-color)]" placeholder="Search events..." type="search"/>
+</div>
+<button class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCGkQs1vN_oYkN6i-edTW0CrGRZOSRZ-spsYZOf8Q6A71RlcflIuww2L4SWspIgEr6VQdf6f9MEp0Ysc8VWswRjW5nBsVQNLuDwAtmiRouhc2hkt4LOg09r12NA8sVeqqjgrofsLkz9FLRBPukjAeqjHax3d1rWMr_hxgffYNX95zUDdCkqQUAzpYl8INGAgBkQui_6Asa4Xa_V9rM1B98sEN_mtPWdFFGNvGNbBEETFVV3L0mvW79Xo9VX8kaDSVbAK4GpgMrEJw");'></button>
+</div>
+</header>
+<main class="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+<div class="mx-auto max-w-7xl">
+<div class="mb-8">
+<h1 class="text-4xl font-bold tracking-tight text-gray-900">Explore Events</h1>
+<p class="mt-2 text-lg text-gray-600">Discover exciting events happening across different colleges.</p>
+</div>
+<div class="mb-6 flex flex-wrap items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-gray-500"> filter_list </span>
+<span class="text-sm font-medium text-gray-700">Filter by:</span>
+</div>
+<div class="flex flex-wrap gap-3">
+<div class="relative">
+<select class="form-select appearance-none block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-sm focus:border-[var(--primary-color)] focus:outline-none focus:ring-[var(--primary-color)]">
+<option selected="">Date</option>
+<option>Today</option>
+<option>This Week</option>
+<option>This Month</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"> expand_more </span>
+</div>
+<div class="relative">
+<select class="form-select appearance-none block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-sm focus:border-[var(--primary-color)] focus:outline-none focus:ring-[var(--primary-color)]">
+<option selected="">Category</option>
+<option>Technology</option>
+<option>Arts</option>
+<option>Law</option>
+<option>Sports</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"> expand_more </span>
+</div>
+<div class="relative">
+<select class="form-select appearance-none block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-sm focus:border-[var(--primary-color)] focus:outline-none focus:ring-[var(--primary-color)]">
+<option selected="">College</option>
+<option>College of Engineering</option>
+<option>College of Arts</option>
+<option>College of Law</option>
+<option>College of Business</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"> expand_more </span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg">
+<div class="aspect-w-16 aspect-h-9">
+<img alt="Tech Talk" class="h-full w-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmpabUN7FlV76_5-C4m3eYCh1PFRF2z2d6jvV7YoWLKgDEjlQOUZWu9z9HdiKWBUrZyUQuXkuOQzEHJL2LKN27s25T9Ka9uPPQrFvAMshqIhmcrwk5CIQk8drSz9-JYq6hnKo0axGXvuLoyZO8pjgJadqUFPehmQJC7e4CrJDHeA2YdBM7oii5FAWvYmRh1KsmnWF4XmP7oT8jqyMqjEKo1HU0gxitIqdftTM6l4O3wVcGRNEIc-fYMrGddEwukNovBtv1_X65kw"/>
+</div>
+<div class="flex flex-1 flex-col p-4">
+<h3 class="text-lg font-semibold text-gray-900">Tech Talk: AI in Business</h3>
+<p class="mt-1 text-sm text-gray-500">October 26, 2024</p>
+<p class="mt-1 text-sm text-gray-500">College of Engineering</p>
+</div>
+<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+<a class="transform rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:scale-105" href="#">View Details</a>
+</div>
+</div>
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg">
+<div class="aspect-w-16 aspect-h-9">
+<img alt="Music Festival" class="h-full w-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfketkOF3ninGbV_gL-Zi0Gpm2bxjDqme-2jDCtxwb06LbPDspO5bRHbVcHgoiNssYUyblIhrhzkvobbVOkLfjSQJklMi1LpwSqJu7hw2aGO_PCJr2d8zRwrnt-Y9vLq-oFpyleQ6VZ6rOhPW8Y1MJ5sOewUQg9i9vtM7nGEAb5SehF_Z6uPP4h31Y-mxHcFRXOzUSUub1I63PuqdOnzlXdFc_TIt3zvwvOCx8psvxxVHm-ZypZo9qMa86_UKIRliGPlkR55-ufg"/>
+</div>
+<div class="flex flex-1 flex-col p-4">
+<h3 class="text-lg font-semibold text-gray-900">Music Festival</h3>
+<p class="mt-1 text-sm text-gray-500">November 15, 2024</p>
+<p class="mt-1 text-sm text-gray-500">College of Arts</p>
+</div>
+<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+<a class="transform rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:scale-105" href="#">Register Now</a>
+</div>
+</div>
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg">
+<div class="aspect-w-16 aspect-h-9">
+<img alt="Debate Competition" class="h-full w-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB37cfshcDCyKqDL-1nUkBh33GCdp0eNJ1nDHS8KHgSdI1YssmlJrCIQolZ-uOBKTT0C3gs65RSzUMEjzWf1LpDD87hM8oLNI6hJ75oKMkb5ymB9lXWP7pzqFCSbbrpL2Wvuv_GhTPq4eDRdkJkAs5DvN-mvo9Wgijy1E5kMplddZl3xOwetYlqgjwULVLFDLnZOpc6LeUQ3Ni2NhlshCb9y22vNP3IkCeHP_BauZWMVnT8_4OAc9qEy3Rsb-2GpDJOBd0K8IlkQ"/>
+</div>
+<div class="flex flex-1 flex-col p-4">
+<h3 class="text-lg font-semibold text-gray-900">Debate Competition</h3>
+<p class="mt-1 text-sm text-gray-500">December 5, 2024</p>
+<p class="mt-1 text-sm text-gray-500">College of Law</p>
+</div>
+<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+<a class="transform rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:scale-105" href="#">View Details</a>
+</div>
+</div>
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg">
+<div class="aspect-w-16 aspect-h-9">
+<img alt="Art Exhibition" class="h-full w-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjr3GC5jEMjsGcGawQMNPOG-3w7Bh3A4iicamcBDdZNOFyJAnmp2BuFLsrRdM6KXZzt6PP1FFkKhqYlJ9IHSsMZU1j4Z_VBffvl44bejfZn1Cxyoa6Ubp-GMlES9KAEKbYUswekxvCQsNRrIEx2hfY9iBBJNdT_I2x4yQrHJLaGxPgza6u2bDJZY0nhaCmbFSiDZMIo5ls7-ORmYwwHfVYUqxQlVF4C4ZQot-jk_jnK4dl9T2Vlp5b557jDNcvFMxGNsw4XydfGA"/>
+</div>
+<div class="flex flex-1 flex-col p-4">
+<h3 class="text-lg font-semibold text-gray-900">Art Exhibition</h3>
+<p class="mt-1 text-sm text-gray-500">January 20, 2025</p>
+<p class="mt-1 text-sm text-gray-500">College of Fine Arts</p>
+</div>
+<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+<a class="transform rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:scale-105" href="#">View Details</a>
+</div>
+</div>
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg">
+<div class="aspect-w-16 aspect-h-9">
+<img alt="Sports Tournament" class="h-full w-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz8RhEx5vqTuMwCodafjABHQwvarzAGKM-dTL6TDM72GRk-2yfR5ek4L4FRBoTBI-5AxBqNkt6WCyvveAHhLyQFclleiBhnOqvOpzb_MEHriW8M1z75hyABan0Bh6qMXtppT3vH77gVT7COiJU7pGHFHPPqigaJqeDWKm6Anot9BgwhCs6URZygXULA1_OzXWtX_8sIcog2kvQsOqimqogJzHvmAbH5dx3qFETyE4DdoHRxI-QaP0nY5IbEmj-CxElwmD2wgD4yQ"/>
+</div>
+<div class="flex flex-1 flex-col p-4">
+<h3 class="text-lg font-semibold text-gray-900">Sports Tournament</h3>
+<p class="mt-1 text-sm text-gray-500">February 10, 2025</p>
+<p class="mt-1 text-sm text-gray-500">College of Sports</p>
+</div>
+<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+<a class="transform rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:scale-105" href="#">Register Now</a>
+</div>
+</div>
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg">
+<div class="aspect-w-16 aspect-h-9">
+<img alt="Career Fair" class="h-full w-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0ZebazJWHzZl-2ioeWzpAzwo979FZ9NuLn4y495hX7xdZ4NCtjxxMQAfOcPIsLT_8MYWToU0t9jTwdVhPTrixCIP1x42-GyhBfUm7v-BIMQo1CLIALC5pb1DhWc0e2AfiM_JruKwq6z4O-siHwrZ5BThCMuvsEUW-LTBhIE_60po5Db9Zr6w5JxXD1PQEukVwrM9OuopSQkF72ppNg9vvRDIW5o46_DaPL0Ulx2XTmaf1VR9LjDwktxFINTpVMvIBbb6k6lyobQ"/>
+</div>
+<div class="flex flex-1 flex-col p-4">
+<h3 class="text-lg font-semibold text-gray-900">Career Fair</h3>
+<p class="mt-1 text-sm text-gray-500">March 1, 2025</p>
+<p class="mt-1 text-sm text-gray-500">College of Business</p>
+</div>
+<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100">
+<a class="transform rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:scale-105" href="#">View Details</a>
+</div>
+</div>
+</div>
+<div class="mt-8 flex items-center justify-center">
+<nav aria-label="Pagination" class="inline-flex -space-x-px rounded-md shadow-sm">
+<a class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50" href="#">
+<span class="sr-only">Previous</span>
+<span aria-hidden="true" class="material-symbols-outlined"> chevron_left </span>
+</a>
+<a aria-current="page" class="relative z-10 inline-flex items-center border border-[var(--primary-color)] bg-blue-50 px-4 py-2 text-sm font-semibold text-[var(--primary-color)]" href="#">1</a>
+<a class="relative inline-flex items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50" href="#">2</a>
+<a class="relative hidden items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 md:inline-flex" href="#">3</a>
+<span class="relative inline-flex items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700">...</span>
+<a class="relative hidden items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 md:inline-flex" href="#">8</a>
+<a class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50" href="#">
+<span class="sr-only">Next</span>
+<span aria-hidden="true" class="material-symbols-outlined"> chevron_right </span>
+</a>
+</nav>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+</body></html>
