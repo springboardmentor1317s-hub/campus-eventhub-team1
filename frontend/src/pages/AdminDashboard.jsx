@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import MiniCalendar from '../components/MiniCalendar';
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -18,7 +19,14 @@ const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
+                <div className="relative">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                </div>
+              <div className="flex-shrink-0 flex items-center ml-4">
                 <h1 className="text-xl font-bold text-indigo-600">CampusEventHub</h1>
               </div>
               <div className="hidden md:ml-8 md:flex md:space-x-8">
@@ -76,7 +84,7 @@ const AdminDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           {/* Total Events */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-blue-50 overflow-hidden shadow rounded-lg hover:shadow-lg transition">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -99,7 +107,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Active Events */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-green-50 overflow-hidden shadow rounded-lg hover:shadow-lg transition">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -122,7 +130,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Total Registrations */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-purple-50 overflow-hidden shadow rounded-lg hover:shadow-lg transition">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -145,7 +153,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Average Participants */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-orange-50 overflow-hidden shadow rounded-lg hover:shadow-lg transition">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -179,7 +187,7 @@ const AdminDashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Events
+              🎉Events
             </button>
             <button
               onClick={() => setActiveTab('registrations')}
@@ -189,7 +197,7 @@ const AdminDashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Registrations
+              👥Registrations
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -199,14 +207,24 @@ const AdminDashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Analytics
+              📊Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'calendar'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              📅 Calendar
             </button>
           </nav>
         </div>
-
-        {/* Events Tab Content */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Events Tab Content */}
         {activeTab === 'events' && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
             <div className="text-center py-12">
               <p className="text-gray-500">Event management will be implemented in the next milestone.</p>
             </div>
@@ -215,7 +233,7 @@ const AdminDashboard = () => {
 
         {/* Registrations Tab Content */}
         {activeTab === 'registrations' && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
             <div className="text-center py-12">
               <p className="text-gray-500">Registration management will be implemented in the next milestone.</p>
             </div>
@@ -224,12 +242,39 @@ const AdminDashboard = () => {
 
         {/* Analytics Tab Content */}
         {activeTab === 'analytics' && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
             <div className="text-center py-12">
               <p className="text-gray-500">Analytics will be implemented in the next milestone.</p>
             </div>
           </div>
         )}
+        {/* Calendar Tab Content */}
+        {activeTab === 'calendar' && (
+          <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
+            <div className="-mb-px flex space-x-8">
+              <MiniCalendar/>
+            </div>
+          </div>
+        )}
+
+     <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
+        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="space-y-3">
+        <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">
+          + Create New Event
+        </button>
+        <button className="w-full bg-gray-100 text-gray-800 py-2 rounded hover:bg-gray-200">
+          Export Event Data
+        </button>
+        <button className="w-full bg-gray-100 text-gray-800 py-2 rounded hover:bg-gray-200">
+          View All Registrations
+        </button>
+        <button className="w-full bg-gray-100 text-gray-800 py-2 rounded hover:bg-gray-200">
+          View Feedback
+        </button>
+        </div>
+       </div>
+      </div>
       </main>
     </div>
   );

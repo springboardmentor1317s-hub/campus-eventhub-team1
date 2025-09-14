@@ -1,0 +1,41 @@
+/* src/components/MiniCalendar.css */
+.mini-calendar-card {
+  background: #f9f9fb;
+  border-radius: 10px;
+  padding: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  max-width: 260px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.compact-calendar {
+  border: none;
+  font-size: 0.8rem;
+}
+
+.react-calendar__tile {
+  padding: 0.4rem 0 !important;
+}
+
+.highlight-today {
+  background: #007bff !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mini-calendar-card {
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+}
