@@ -1,287 +1,366 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('upcoming');
-  const [stats, setStats] = useState({
-    registeredEvents: 0,
-    upcomingEvents: 0,
-    completedEvents: 0,
-    certificates: 0
+  const [activeTab, setActiveTab] = useState('browse');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [userEvents, setUserEvents] = useState([]);
+
+  // Mock data for events
+  const [events, setEvents] = useState([
+    {
+      id: 1,
+      title: "TechFest 2025 - Hackathon",
+      college: "IIT Delhi",
+      category: "hackathon",
+      date: "2025-10-15",
+      time: "09:00 AM",
+      location: "Main Campus, Delhi",
+      participants: 156,
+      maxParticipants: 200,
+      image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400",
+      description: "48-hour coding marathon with prizes worth ₹2 lakhs. Build innovative solutions for real-world problems.",
+      tags: ["Coding", "Innovation", "Team Event"],
+      registrationDeadline: "2025-10-10",
+      fee: 500,
+      rating: 4.8,
+      status: "open"
+    },
+    {
+      id: 2,
+      title: "Inter-College Sports Meet",
+      college: "Delhi University",
+      category: "sports",
+      date: "2025-10-22",
+      time: "08:00 AM",
+      location: "Sports Complex, DU",
+      participants: 89,
+      maxParticipants: 120,
+      image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400",
+      description: "Multi-sport championship featuring basketball, football, cricket, and track events.",
+      tags: ["Sports", "Competition", "Championship"],
+      registrationDeadline: "2025-10-18",
+      fee: 200,
+      rating: 4.6,
+      status: "open"
+    },
+    {
+      id: 3,
+      title: "Cultural Extravaganza",
+      college: "Jamia Millia Islamia",
+      category: "cultural",
+      date: "2025-11-05",
+      time: "06:00 PM",
+      location: "Auditorium, JMI",
+      participants: 234,
+      maxParticipants: 300,
+      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
+      description: "Showcase your artistic talents in dance, music, drama, and fine arts competitions.",
+      tags: ["Arts", "Performance", "Cultural"],
+      registrationDeadline: "2025-11-01",
+      fee: 300,
+      rating: 4.9,
+      status: "open"
+    },
+    {
+      id: 4,
+      title: "AI/ML Workshop Series",
+      college: "IIIT Hyderabad",
+      category: "workshop",
+      date: "2025-10-28",
+      time: "10:00 AM",
+      location: "Lab Block, IIIT-H",
+      participants: 45,
+      maxParticipants: 50,
+      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400",
+      description: "Hands-on workshop on machine learning algorithms and practical AI applications.",
+      tags: ["AI/ML", "Workshop", "Learning"],
+      registrationDeadline: "2025-10-25",
+      fee: 800,
+      rating: 4.7,
+      status: "filling_fast"
+    }
+  ]);
+
+  const categories = [
+    { id: 'all', name: 'All Events', icon: Calendar },
+    { id: 'hackathon', name: 'Hackathons', icon: Code },
+    { id: 'sports', name: 'Sports', icon: Trophy },
+    { id: 'cultural', name: 'Cultural', icon: Palette },
+    { id: 'workshop', name: 'Workshops', icon: BookOpen }
+  ];
+
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         event.college.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
-  const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState([]);
 
-  useEffect(() => {
-    // Simulate fetching stats and events
-    setTimeout(() => {
-      setStats({
-        registeredEvents: 5,
-        upcomingEvents: 3,
-        completedEvents: 2,
-        certificates: 2
-      });
+  const handleRegister = (eventId) => {
+    const event = events.find(e => e.id === eventId);
+    if (event && !userEvents.some(e => e.id === eventId)) {
+      setUserEvents([...userEvents, { ...event, registrationDate: new Date().toISOString(), status: 'registered' }]);
+      setEvents(events.map(e => 
+        e.id === eventId ? { ...e, participants: e.participants + 1 } : e
+      ));
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'open': return 'text-green-600 bg-green-100';
+      case 'filling_fast': return 'text-orange-600 bg-orange-100';
+      case 'closed': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const EventCard = ({ event, showRegisterButton = true }) => (
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
+      <div className="relative">
+        <img src={event.image} alt={event.title} className="w-full h-48 object-cover" />
+        <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(event.status)}`}>
+          {event.status.replace('_', ' ').toUpperCase()}
+        </div>
+        <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
+          {event.college}
+        </div>
+      </div>
       
-      setEvents([
-        {
-          id: 1,
-          title: 'Annual Tech Hackathon',
-          college: 'IIT Bombay',
-          date: '2024-02-15',
-          category: 'hackathon',
-          status: 'registered'
-        },
-        {
-          id: 2,
-          title: 'Cultural Fest 2024',
-          college: 'Delhi University',
-          date: '2024-03-01',
-          category: 'cultural',
-          status: 'upcoming'
-        },
-        // Add more sample events as needed
-      ]);
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-3">
+          <h3 className="text-xl font-bold text-gray-800 line-clamp-2">{event.title}</h3>
+          <div className="flex items-center text-yellow-500 ml-2">
+            <Star className="w-4 h-4 fill-current" />
+            <span className="ml-1 text-sm font-medium">{event.rating}</span>
+          </div>
+        </div>
+        
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
+        
+        <div className="flex flex-wrap gap-2 mb-4">
+          {event.tags.map(tag => (
+            <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+        
+        <div className="space-y-2 mb-4 text-sm text-gray-600">
+          <div className="flex items-center">
+            <Calendar className="w-4 h-4 mr-2" />
+            <span>{new Date(event.date).toLocaleDateString()} at {event.time}</span>
+          </div>
+          <div className="flex items-center">
+            <MapPin className="w-4 h-4 mr-2" />
+            <span>{event.location}</span>
+          </div>
+          <div className="flex items-center">
+            <Users className="w-4 h-4 mr-2" />
+            <span>{event.participants}/{event.maxParticipants} registered</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="text-lg font-bold text-green-600">₹{event.fee}</div>
+          {showRegisterButton && (
+            <button
+              onClick={() => handleRegister(event.id)}
+              disabled={userEvents.some(e => e.id === event.id) || event.participants >= event.maxParticipants}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                userEvents.some(e => e.id === event.id)
+                  ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                  : event.participants >= event.maxParticipants
+                  ? 'bg-red-100 text-red-700 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {userEvents.some(e => e.id === event.id) 
+                ? 'Registered' 
+                : event.participants >= event.maxParticipants
+                ? 'Full'
+                : 'Register'
+              }
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
-      setLoading(false);
-    }, 1000);
-  }, []);
+  const DashboardStats = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-blue-100 text-sm">Registered Events</p>
+            <p className="text-3xl font-bold">{userEvents.length}</p>
+          </div>
+          <Calendar className="w-8 h-8 text-blue-200" />
+        </div>
+      </div>
+      
+      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-green-100 text-sm">Completed Events</p>
+            <p className="text-3xl font-bold">{userEvents.filter(e => e.status === 'completed').length}</p>
+          </div>
+          <CheckCircle className="w-8 h-8 text-green-200" />
+        </div>
+      </div>
+      
+      <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-purple-100 text-sm">Available Events</p>
+            <p className="text-3xl font-bold">{events.filter(e => e.status === 'open').length}</p>
+          </div>
+          <Trophy className="w-8 h-8 text-purple-200" />
+        </div>
+      </div>
+      
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">CampusEventHub</h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Settings className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="hidden md:block">
+                  <p className="text-sm font-medium text-gray-700">{currentUser?.name || 'Student'}</p>
+                  <p className="text-xs text-gray-500">{currentUser?.college || 'Computer Science'}</p>
+                </div>
+                <LogOut 
+                  className="w-5 h-5 text-gray-400 hover:text-red-500 cursor-pointer" 
+                  onClick={logout}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold text-indigo-600">CampusEventHub</h1>
-              </div>
-              <div className="hidden md:ml-8 md:flex md:space-x-8">
-                <a href="#" className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium">
-                  Dashboard
-                </a>
-                <a href="#" className="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
-                  Browse Events
-                </a>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-500">
-                <span className="sr-only">View notifications</span>
-                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
+          <div className="flex space-x-8">
+            {[
+              { id: 'browse', name: 'Browse Events', icon: Search },
+              { id: 'registered', name: 'My Events', icon: Calendar },
+              { id: 'dashboard', name: 'Dashboard', icon: User }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span>{tab.name}</span>
               </button>
-              <div className="flex items-center space-x-3">
-                <img className="h-8 w-8 rounded-full" src={`https://ui-avatars.com/api/?name=${currentUser?.name}&background=6366f1&color=fff`} alt="" />
-                <div className="hidden md:flex md:flex-col md:items-start">
-                  <span className="text-sm font-medium text-gray-700">{currentUser?.name}</span>
-                  <span className="text-xs text-gray-500">{currentUser?.college}</span>
-                </div>
-                <button 
-                  onClick={logout}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Dashboard Header */}
-        <div className="md:flex md:items-center md:justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">Student Dashboard</h2>
-            <p className="mt-1 text-sm text-gray-500">Manage your event registrations and participations</p>
-          </div>
-          <div className="mt-4 md:mt-0">
-            <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
-              <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Find Events
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          {/* Registered Events */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-blue-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
+        {activeTab === 'dashboard' && <DashboardStats />}
+        
+        {activeTab === 'browse' && (
+          <>
+            {/* Search and Filters */}
+            <div className="mb-8 bg-white p-6 rounded-xl shadow-sm">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search events, colleges..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Registered Events</dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{stats.registeredEvents}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Upcoming Events */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-green-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Upcoming Events</dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{stats.upcomingEvents}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Completed Events */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-purple-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Completed Events</dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{stats.completedEvents}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Certificates */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-orange-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Certificates Earned</dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{stats.certificates}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'upcoming'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Upcoming Events
-            </button>
-            <button
-              onClick={() => setActiveTab('registered')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'registered'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              My Registrations
-            </button>
-            <button
-              onClick={() => setActiveTab('completed')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'completed'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Completed Events
-            </button>
-          </nav>
-        </div>
-
-        {/* Events Grid */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {events.map((event) => (
-              <div key={event.id} className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
-                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                      event.status === 'registered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {event.status === 'registered' ? 'Registered' : 'Open'}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500 mb-4">
-                    <p>Hosted by {event.college}</p>
-                    <p className="mt-1">
-                      {new Date(event.date).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex justify-end">
+                
+                <div className="flex gap-2 overflow-x-auto">
+                  {categories.map(category => (
                     <button
-                      className={`px-4 py-2 text-sm font-medium rounded-md ${
-                        event.status === 'registered'
-                          ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
-                          : 'text-white bg-indigo-600 hover:bg-indigo-700'
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg whitespace-nowrap transition-colors ${
+                        selectedCategory === category.id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {event.status === 'registered' ? 'View Details' : 'Register Now'}
+                      <category.icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{category.name}</span>
                     </button>
-                  </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Events Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEvents.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </>
+        )}
+        
+        {activeTab === 'registered' && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registered Events</h2>
+            {userEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userEvents.map(event => (
+                  <EventCard key={event.id} event={event} showRegisterButton={false} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Events Registered</h3>
+                <p className="text-gray-500 mb-6">Start exploring and register for exciting events!</p>
+                <button
+                  onClick={() => setActiveTab('browse')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Browse Events
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>
