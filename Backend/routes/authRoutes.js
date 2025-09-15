@@ -1,9 +1,16 @@
-import express from "express";
-import { registerUser, loginUser } from "../controllers/authController.js";
-
+const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
+const { protect, restrictTo } = require('../middleware/authMiddleware');
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+// Auth routes
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.get('/profile', protect, authController.getProfile);
 
-export default router;
+// Admin-only route example
+router.get('/admin/users', protect, restrictTo('college_admin', 'super_admin'), (req, res) => {
+  res.status(200).json({ message: 'Admin access granted' });
+});
+
+module.exports = router;
