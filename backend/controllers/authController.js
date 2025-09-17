@@ -14,7 +14,7 @@ export const registerUser = async (req, res) => {
 
         // Password match check
         if (password !== confirmPassword) {
-            return res.status(400).json({ message: "Passwords do not match" });
+            return res.status(400).json({ message: "Password does not match" });
         }
 
         // Check if email already exists
@@ -62,7 +62,12 @@ export const registerUser = async (req, res) => {
 // ....Login....
 export const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
+
+        // Validate input
+        if (!email || !password || !role) {
+            return res.status(400).json({ message: "All fields are required" })
+        }
 
         // Check email and password
         const user = await User.findOne({ email });
@@ -73,6 +78,11 @@ export const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        // Compare role
+        if (user.role !== role) {
+            return res.status(403).json({ message: `This account is not registered as ${role}` })
         }
 
         // JWT token

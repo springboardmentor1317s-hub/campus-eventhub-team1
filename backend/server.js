@@ -7,6 +7,9 @@ const app = express();
 
 dotenv.config();
 
+// Middleware to parse JSON
+app.use(express.json())
+
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
@@ -14,9 +17,10 @@ app.listen(port, () => {
     connectDB();
 });
 
+// Test route
 app.get('/', (req, res) => {
     console.log('This is home route');
     res.send('This is the response')
 })
 
-app.use("/backend/user", userRouter);
+app.use("/user", userRouter);
