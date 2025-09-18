@@ -9,6 +9,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
   const [formData, setFormData] = useState({
     loginEmail: '',
     loginPassword: ''
@@ -52,9 +53,28 @@ const Login = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
+  const handleForgotPassword = async (e, email) => {
     e.preventDefault();
-    setShowForgotModal(false);
+    try {
+      const res = await fetch("http://localhost:4000/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Password reset link sent to " + email);
+        setForgotEmail("");
+        setShowForgotModal(false);
+        
+      } else {
+        alert(data.error || "Failed to send reset link");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
   };
 
   return (
@@ -229,30 +249,54 @@ const Login = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all">
             <div className="p-6">
+              {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">Reset Password</h3>
                 <button
                   onClick={() => setShowForgotModal(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
+
+              {/* Body */}
               <p className="text-gray-600 text-sm mb-4">
                 Enter your email address and we'll send you a link to reset your password.
               </p>
-              <form onSubmit={handleForgotPassword} className="space-y-4">
+
+              <form
+                onSubmit={(e) => handleForgotPassword(e, forgotEmail)}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
                   <input
                     type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                              focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   />
                 </div>
+
+                {/* Buttons */}
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -273,6 +317,7 @@ const Login = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
