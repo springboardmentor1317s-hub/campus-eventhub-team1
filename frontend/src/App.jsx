@@ -1,10 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/login';
-import StudentDashboard from './pages/StudentDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import Register from './pages/Register';
+import Login from './pages/login.jsx';
+import StudentDashboard from './pages/StudentDashboard.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import Register from './pages/Register.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import EventCreationForm from './pages/EventForm.jsx';
 
 // Protected Route Component for any authenticated user
 const ProtectedRoute = ({ children }) => {
@@ -105,7 +106,7 @@ const AppRoutes = () => {
           </AdminRoute>
         } 
       />
-      
+            
       {/* Fallback route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
