@@ -52,6 +52,7 @@ const ResetPassword = () => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Custom Navbar */}
       <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm sticky top-0 z-40">
@@ -159,8 +160,48 @@ const ResetPassword = () => {
       <footer className="text-center py-6 text-gray-500 text-sm">
         © 2025 CampusEventHub. All rights reserved.
       </footer>
+=======
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4 text-center">Reset Password</h2>
+
+        <form onSubmit={handleReset} className="space-y-4">
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Confirm New Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? "Resetting..." : "Reset Password"}
+          </button>
+        </form>
+
+        {message && (
+          <p className="text-center text-sm text-red-500 mt-4">{message}</p>
+        )}
+      </div>
+>>>>>>> 77e13c9a95c801db04a6ca5ff90a64f37eca5252
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default ResetPassword;
+=======
+export default ResetPassword;
+>>>>>>> 77e13c9a95c801db04a6ca5ff90a64f37eca5252

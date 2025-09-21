@@ -193,4 +193,8 @@ exports.resetPassword = async (req, res) => {
     console.error("Reset password error:", err);
     res.status(500).json({ error: "Server error" });
   }
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 77e13c9a95c801db04a6ca5ff90a64f37eca5252
