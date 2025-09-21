@@ -31,4 +31,6 @@ app.use('*', (req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
+app.use('/uploads', express.static('uploads'));
+
 module.exports = app;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from "react-select";
 import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, Bell, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -208,12 +209,25 @@ const AdminDashboard = () => {
     const [formData, setFormData] = useState({
       title: '',
       description: '',
-      category: '',
+      categories: [],
       location: '',
       start_date: '',
       end_date: '',
+      price: '',
+      registration_limit: '',
       image: null,
     });
+
+    const categoryOptions = [
+    { value: "Sports", label: "Sports" },
+    { value: "Hackathon", label: "Hackathon" },
+    { value: "Cultural", label: "Cultural" },
+    { value: "Technical", label: "Technical" },
+    { value: "Seminar", label: "Seminar" },
+    { value: "Workshop", label: "Workshop" },
+  ];
+
+
 
     // State for the image preview URL
     const [imagePreview, setImagePreview] = useState('');
@@ -228,6 +242,17 @@ const AdminDashboard = () => {
     const handleChange = (e) => {
       const { name, value } = e.target;
       setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // handler for multi-select
+    const handleCategoryChange = (selectedOptions) => {
+      setFormData((prev) => ({
+        ...prev,
+        categories: selectedOptions ? selectedOptions.map((opt) => opt.value) : [],
+      }));
+      if (selectedOptions && selectedOptions.length > 0) {
+        setErrors((prev) => ({ ...prev, categories: false }));
+      }
     };
 
     // Handler for the file input to create a preview
@@ -259,17 +284,21 @@ const AdminDashboard = () => {
     }, [message]);
 
     // Form submission handler
-    const handleSubmit = (e) => {
+    const handleSubmit = async(e) => {
       e.preventDefault();
       let formErrors = {};
       
       // --- Validation ---
       if (!formData.title.trim()) formErrors.title = true;
       if (!formData.description.trim()) formErrors.description = true;
-      if (!formData.category) formErrors.category = true;
+      if (!formData.categories || formData.categories.length === 0) {
+        formErrors.categories = true;
+      }
       if (!formData.location.trim()) formErrors.location = true;
       if (!formData.start_date) formErrors.start_date = true;
       if (!formData.end_date) formErrors.end_date = true;
+      if (formData.price === '') formErrors.price = true;
+      if (formData.registration_limit === '') formErrors.registration_limit = true;
 
       if (formData.start_date && formData.end_date && new Date(formData.end_date) <= new Date(formData.start_date)) {
         formErrors.end_date = true;
@@ -288,9 +317,46 @@ const AdminDashboard = () => {
       // --- Process Form Data ---
       // In a real application, you'd send this to a server.
       const dataToSubmit = new FormData();
+
       for (const key in formData) {
-        dataToSubmit.append(key, formData[key]);
+        if (key === "categories") {
+          // Convert categories array to JSON before appending
+          dataToSubmit.append("categories", JSON.stringify(formData.categories));
+        } else {
+          dataToSubmit.append(key, formData[key]);
+        }
       }
+
+      try {
+          const response = await fetch("http://localhost:5000/api/events/create-event", {
+            method: "POST",
+            body: dataToSubmit, 
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            setMessage({ text: "Event created successfully!", type: "success" });
+            alert("Event created succefully")
+            // reset form
+            setTimeout(() => {
+              setFormData({
+                title: '', description: '', categories: [], location: '',
+                start_date: '', end_date: '', price: '',
+                registration_limit: '', image: null,
+              });
+              setImagePreview('');
+              setErrors({});
+              setMessage({ text: '', type: 'info' });
+              setShowCreateEventModal(false);
+            }, 2000);
+          } else {
+            setMessage({ text: result.message || "Failed to create event", type: "error" });
+          }
+        } catch (err) {
+          console.error(err);
+          setMessage({ text: "Server error. Try again later.", type: "error" });
+        }
 
       console.log('Form Submitted!');
       for (let [key, value] of dataToSubmit.entries()) {
@@ -302,8 +368,9 @@ const AdminDashboard = () => {
       // Reset form and close modal after 2 seconds
       setTimeout(() => {
         setFormData({
-          title: '', description: '', category: '', location: '',
-          start_date: '', end_date: '', image: null,
+          title: '', description: '', categories: [], location: '',
+          start_date: '', end_date: '', price: '',
+          registration_limit: '', image: null,
         });
         setImagePreview('');
         setErrors({});
@@ -320,8 +387,9 @@ const AdminDashboard = () => {
 
     const closeModal = () => {
       setFormData({
-        title: '', description: '', category: '', location: '',
-        start_date: '', end_date: '', image: null,
+        title: '', description: '', categories: [], location: '',
+        start_date: '', end_date: '', price: '',
+          registration_limit: '', image: null,
       });
       setImagePreview('');
       setErrors({});
@@ -345,7 +413,7 @@ const AdminDashboard = () => {
           onClick={(e) => e.stopPropagation()}
           style={{ backdropFilter: 'blur(10px)' }}
         >
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl">
+          <div className="sticky top-0 z-30 bg-white border-b border-gray-200 p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl">
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1 pr-4">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Create a New Event</h2>
@@ -396,22 +464,34 @@ const AdminDashboard = () => {
                 {/* Category & Location */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                    <select 
-                      id="category" 
-                      name="category" 
-                      value={formData.category} 
-                      onChange={handleChange} 
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
+                    <Select
+                      isMulti
+                      options={categoryOptions}
+                      value={categoryOptions.filter((opt) =>
+                        formData.categories.includes(opt.value)
+                      )}
                       required
-                      className={`form-input w-full bg-gray-50 border ${errors.category ? 'border-red-500' : 'border-gray-300'} rounded-lg py-3 px-4 text-gray-900 transition-all duration-200 focus:border-blue-500 focus:ring focus:ring-blue-500/50`}
-                    >
-                      <option value="">Select a Category</option>
-                      <option value="Conference">Conference</option>
-                      <option value="Workshop">Workshop</option>
-                      <option value="Hackathon">Hackathon</option>
-                      <option value="Cultural">Cultural Fest</option>
-                      <option value="Sports">Sports</option>
-                    </select>
+                      className={`w-full`}
+                      closeMenuOnScroll={false}
+                      menuPosition="absolute" 
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: errors.categories ? '#f87171' : '#d1d5db', 
+                          '&:hover': {
+                            borderColor: errors.categories ? '#f87171' : '#000000',
+                          },
+                          borderRadius: '0.5rem', 
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 20,
+                          maxHeight: '200px',
+                        }),
+                      }}
+                      onChange={handleCategoryChange}
+                    />
                   </div>
                   <div>
                     <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">Location</label>
@@ -453,6 +533,48 @@ const AdminDashboard = () => {
                       required
                       className={`form-input w-full bg-gray-50 border ${errors.end_date ? 'border-red-500' : 'border-gray-300'} rounded-lg py-3 px-4 text-gray-900 transition-all duration-200 focus:border-blue-500 focus:ring focus:ring-blue-500/50`} 
                     />
+                  </div>
+                </div>
+
+                {/* Price & Registration Limit */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+                      Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      min="0"
+                      required
+                      className={`form-input w-full border ${
+                        errors.price ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg py-3 px-4`}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="registration_limit"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Registration Limit
+                    </label>
+                    <input
+                      type="number"
+                      id="registration_limit"
+                      name="registration_limit"
+                      value={formData.registration_limit}
+                      onChange={handleChange}
+                      min="0"
+                      required
+                      className={`form-input w-full border ${
+                        errors.registration_limit ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg py-3 px-4`}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Enter 0 for unlimited registrations</p>
                   </div>
                 </div>
                 
