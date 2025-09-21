@@ -7,6 +7,7 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('browse');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [userEvents, setUserEvents] = useState([]);
@@ -95,11 +96,23 @@ const StudentDashboard = () => {
     { id: 'workshop', name: 'Workshops', icon: BookOpen }
   ];
 
+  const uniqueDates = [
+    ...new Set(events.map(event => new Date(event.date).toISOString().split("T")[0]))
+  ];
+
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.college.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.college.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === 'all' || event.category === selectedCategory;
+
+    const matchesDate =
+      selectedDateFilter === 'all' ||
+      new Date(event.date).toISOString().split("T")[0] === selectedDateFilter;
+
+    return matchesSearch && matchesCategory && matchesDate;
   });
 
   const handleRegister = (eventId) => {
@@ -298,34 +311,74 @@ const StudentDashboard = () => {
         {activeTab === 'browse' && (
           <>
             {/* Search and Filters */}
-            <div className="mb-8 bg-white p-6 rounded-xl shadow-sm">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
+            <div className="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm">
+              <div className="space-y-4">
+                {/* Search Bar */}
+                <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search events, colleges..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                   />
                 </div>
-                
-                <div className="flex gap-2 overflow-x-auto">
-                  {categories.map(category => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg whitespace-nowrap transition-colors ${
-                        selectedCategory === category.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+
+                {/* Filters Row */}
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                  {/* All Events Button */}
+                  <button
+                    onClick={() => { setSearchTerm(''); setSelectedCategory('all'); setSelectedDateFilter('all'); }}
+                    className="bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base order-3 sm:order-1"
+                  >
+                    All Events
+                  </button>
+
+                  {/* Filter Dropdowns Container */}
+                  <div className="flex flex-col sm:flex-row gap-3 flex-1 sm:flex-none order-1 sm:order-2">
+                    {/* Category Dropdown */}
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
                     >
-                      <category.icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{category.name}</span>
-                    </button>
-                  ))}
+                      <option value="all" disabled hidden>
+                        Filter by Category
+                      </option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>                    
+                    
+                    {/* Date Dropdown */}
+                    <select
+                      value={selectedDateFilter}                  
+                      onChange={(e) => setSelectedDateFilter(e.target.value)}
+                      className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
+                    >
+                      {/* Placeholder heading */}
+                      <option value="all" disabled hidden>                  
+                        Filter by Dates
+                      </option>
+                    
+                      {/* Default option */}                  
+                      <option value="all">All Dates</option>
+                    
+                      {/* Event dates */}
+                      {uniqueDates.map((date) => (
+                        <option key={date} value={date}>
+                          {new Date(date).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
