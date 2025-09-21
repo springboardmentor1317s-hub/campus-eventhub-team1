@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, Bell, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -202,6 +203,15 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const navigate = useNavigate();
+  const HandleEventCreation =()=>{
+    navigate('/create-event')
+  }
+
+
+
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -285,7 +295,7 @@ const AdminDashboard = () => {
             <p className="mt-1 text-sm text-gray-500">Manage your events and track performance</p>
           </div>
           <div className="mt-4 md:mt-0">
-            <button className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
+            <button  onClick={HandleEventCreation} className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
               <Plus className="w-5 h-5 mr-2" />
               Create Event
             </button>

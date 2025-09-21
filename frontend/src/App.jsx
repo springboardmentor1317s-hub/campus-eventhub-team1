@@ -7,6 +7,8 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HomePage } from './pages/HomePage.jsx';
+import { EventCreationForm } from './components/eventForm/EventCreationForm.jsx';
+
 
 
 
@@ -73,6 +75,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path ="/create-event" element={<EventCreationForm/>} />
 
       <Route path = "/" element ={<HomePage/>} />
 
