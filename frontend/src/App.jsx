@@ -6,6 +6,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { EventCreationForm } from './components/eventForm/EventCreationForm.jsx';
 
 // Protected Route Component for any authenticated user
 const ProtectedRoute = ({ children }) => {
@@ -70,6 +71,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/create-event" element={<EventCreationForm />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -125,47 +127,5 @@ const App = () => {
   );
 };
 
-// In the handleLoginSubmit function:
-const handleLoginSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  
-  try {
-    const response = await fetch('http://localhost:4000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: formData.loginEmail,
-        password: formData.loginPassword
-      }),
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Login failed');
-    }
-
-    // Save token and user info in localStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    
-    // Redirect based on user role
-    if (data.user.role === 'student') {
-      navigate('/student/dashboard');
-    } else {
-      navigate('/admin/dashboard');
-    }
-    
-  } catch (error) {
-    console.error('Login error:', error);
-    setError(error.message || 'An error occurred during login');
-  } finally {
-    setLoading(false);
-  }
-};
 
 export default App;
