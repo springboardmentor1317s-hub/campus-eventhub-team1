@@ -10,10 +10,10 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/profile', protect, authController.getProfile);
 
-// Admin-only route example
-router.get('/admin/users', protect, restrictTo('college_admin', 'super_admin'), (req, res) => {
-  res.status(200).json({ message: 'Admin access granted' });
-});
+// Admin-only routes
+router.get('/admin/users', protect, restrictTo('college_admin', 'super_admin'), authController.getAllUsers);
+router.get('/admin/users/:userId', protect, restrictTo('college_admin', 'super_admin'), authController.getUserById);
+router.delete('/admin/users/:userId', protect, restrictTo('college_admin', 'super_admin'), authController.deleteUser);
 
 // Forgot Password Route
 router.post("/forgot-password", forgotPassword);

@@ -111,6 +111,77 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+// Get all users (Admin only)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({})
+      .select('-password -resetToken -resetTokenExpiry -passwordChangedAt')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        users,
+        total: users.length
+      }
+    });
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+// Get user by ID (Admin only) - without password
+exports.getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId)
+      .select('-password -resetToken -resetTokenExpiry -passwordChangedAt');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Get user by ID error:', error);
+    res.status(500).json({ error: 'Failed to fetch user details' });
+  }
+};
+
+// Delete user (Admin only)
+exports.deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Prevent admin from deleting themselves
+    if (user._id.toString() === req.user.id) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
