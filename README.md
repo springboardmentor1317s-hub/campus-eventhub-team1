@@ -50,7 +50,9 @@ The platform ensures **secure authentication**, **role-based access control**, a
 ## 🏗️ Architecture & Design
 
 ### System Architecture
+
 ![System Architecture](./docs/system-architecture.png)
+
 *Overall system architecture showing the interaction between frontend, backend, and database components*
 
 ### Architecture Overview
@@ -61,11 +63,15 @@ The platform ensures **secure authentication**, **role-based access control**, a
 - **Deployment**: Cloud-ready with environment-based configuration
 
 ### Use Case Diagram
+
 ![Use Case Diagram](./docs/usecase-diagram.png)
+
 *Use case diagram illustrating the interactions between different user roles and system functionalities*
 
 ### Sequence Diagram
+
 ![Sequence Diagram](./docs/sequence-diagram.png)
+
 *Sequence diagram showing the flow of operations for key user interactions and system processes*
 
 ---
