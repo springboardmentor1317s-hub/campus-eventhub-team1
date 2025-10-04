@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { EventCreationForm } from './components/eventForm/EventCreationForm.jsx';
+import { EventRegistrationPage } from './components/eventForm/EventRegistrationPage.jsx';
 
 // Protected Route Component for any authenticated user
 const ProtectedRoute = ({ children }) => {
@@ -75,6 +76,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+  <Route path = "/event-register/:eventId" element = {<EventRegistrationPage />} />
       
       {/* Root route - redirect based on role */}
       <Route 
