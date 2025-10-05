@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, Bell, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { ParticipantManagementPage } from '../components/Admin/ParticipantManagementPage';
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -447,15 +448,10 @@ const AdminDashboard = () => {
         )}
 
         {/* Registrations Tab Content */}
-        {activeTab === 'registrations' && (
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-center py-12">
-              <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Registration Management</h3>
-              <p className="text-gray-500">Detailed registration management will be implemented in Milestone 3.</p>
-            </div>
-          </div>
-        )}
+      {activeTab === 'registrations' && (
+  <ParticipantManagementPage />
+)}
+
 
         {/* Admin Logs Tab Content */}
         {activeTab === 'admin-logs' && (

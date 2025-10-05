@@ -5,9 +5,11 @@ import {
   AlertCircle, XCircle, Bell 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Navigate, useNavigate } from 'react-router-dom';
 
-export const StudentDashboard = () => {
+ export const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('browse');
   const [searchTerm, setSearchTerm] = useState('');
@@ -107,16 +109,10 @@ export const StudentDashboard = () => {
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
   const handleRegister = (eventId) => {
-    const event = events.find(e => e.id === eventId);
-    if (event && !userEvents.some(e => e.id === eventId)) {
-      setUserEvents([...userEvents, { ...event, registrationDate: new Date().toISOString(), status: 'registered' }]);
-      setEvents(events.map(e => 
-        e.id === eventId ? { ...e, participants: e.participants + 1 } : e
-      ));
-    }
+    navigate(`/event-register/${eventId}`);
   };
+  
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -187,12 +183,8 @@ export const StudentDashboard = () => {
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {userEvents.some(e => e.id === event.id) 
-                ? 'Registered' 
-                : event.participants >= event.maxParticipants
-                ? 'Full'
-                : 'Register'
-              }
+              {userEvents.some(e => e.id === event.id) ? 'Registered' : event.participants >= event.maxParticipants ? 'Full' : 'Register'}
+             
             </button>
           )}
         </div>
@@ -389,5 +381,7 @@ export const StudentDashboard = () => {
     </div>
   );
 };
+
+
 
 

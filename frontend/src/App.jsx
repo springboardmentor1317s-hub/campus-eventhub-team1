@@ -7,7 +7,8 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HomePage } from './pages/HomePage.jsx';
-import { EventCreationForm } from './components/eventForm/EventCreationForm.jsx';
+import { EventCreationForm } from './components/Events/EventCreationForm.jsx';
+import { EventRegisterPage } from './components/Events/EventRegisterPage.jsx';
 
 
 
@@ -82,6 +83,8 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path= '/event-register/:eventId' element ={<EventRegisterPage/>}/>
+
       
       {/* Root route - redirect based on role */}
       <Route 
