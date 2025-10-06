@@ -1,39 +1,24 @@
-import express from "express";
-import { loginUser, registerUser } from "../controllers/authController.js";
-import { protect, authorize } from "../middlewares/authMiddleware.js";
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { forgotPassword } = require("../controllers/authController.js");
+const { resetPassword } = require("../controllers/authController.js");
 
-const userRouter = express.Router();
+// Auth routes
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.get('/profile', protect, authController.getProfile);
 
-// Public routes
-userRouter.post("/register", registerUser);
-userRouter.post("/login", loginUser);
+// Admin-only routes
+router.get('/admin/users', protect, restrictTo('college_admin', 'super_admin'), authController.getAllUsers);
+router.get('/admin/users/:userId', protect, restrictTo('college_admin', 'super_admin'), authController.getUserById);
+router.delete('/admin/users/:userId', protect, restrictTo('college_admin', 'super_admin'), authController.deleteUser);
 
-// Role-based dashboards
-userRouter.get(
-    "/student/dashboard",
-    protect,
-    authorize("student"),
-    (req, res) => {
-        res.json({ message: "Welcome to Student Dashboard", user: req.user });
-    }
-);
+// Forgot Password Route
+router.post("/forgot-password", forgotPassword);
 
-userRouter.get(
-    "/collegeadmin/dashboard",
-    protect,
-    authorize("college_admin"),
-    (req, res) => {
-        res.json({ message: "Welcome to College Admin Dashboard", user: req.user });
-    }
-);
+// Reset Password
+router.post("/reset-password", resetPassword);
 
-userRouter.get(
-    "/superadmin/dashboard",
-    protect,
-    authorize("super_admin"),
-    (req, res) => {
-        res.json({ message: "Welcome to Super Admin Dashboard", user: req.user });
-    }
-);
-
-export default userRouter;
+module.exports = router;
