@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ProfileSettings from '../components/ProfileSettings';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -12,10 +13,13 @@ const StudentDashboard = () => {
   const [selectedDateFilter, setSelectedDateFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [userEvents, setUserEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [events, setEvents] = useState([]);
+  const token = localStorage.getItem('token');
+  const dropdownRef = useRef(null);
   
   // Define the categories array
   const categories = useMemo(() => [
@@ -125,6 +129,34 @@ const StudentDashboard = () => {
 
     return matchesDate;
   }), [events, selectedDateFilter]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle logout with confirmation
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+    }
+    setShowDropdown(false);
+  };
+
+  // Handle settings click
+  const handleSettingsClick = () => {
+    setShowSettings(true);
+    setShowDropdown(false);
+  };
 
   const handleRegister = (eventId) => {
     // Navigate to the event registration page with the event ID
@@ -314,7 +346,13 @@ const StudentDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Settings className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+              {/* Notification Icon */}
+              <div className="relative">
+                <Bell className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                  3
+                </span>
+              </div>
               
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -338,10 +376,35 @@ const StudentDashboard = () => {
                   </div>
                   <p className="text-xs text-gray-500">{currentUser?.college || 'Computer Science'}</p>
                 </div>
-                <LogOut 
-                  className="w-5 h-5 text-gray-400 hover:text-red-500 cursor-pointer" 
-                  onClick={logout}
-                />
+                
+                {/* Settings Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <Settings 
+                    className="w-5 h-5 text-gray-400 hover:text-blue-600 cursor-pointer" 
+                    onClick={() => setShowDropdown(!showDropdown)}
+                  />
+                  
+                  {/* Dropdown Menu */}
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <button
+                        onClick={handleSettingsClick}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>Account Settings</span>
+                      </button>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -376,9 +439,19 @@ const StudentDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'dashboard' && <DashboardStats />}
+        {/* Show ProfileSettings if showSettings is true */}
+        {showSettings && (
+          <ProfileSettings 
+            currentUser={currentUser} 
+            logout={logout} 
+            token={token}
+            onBack={() => setShowSettings(false)}
+          />
+        )}
+
+        {!showSettings && activeTab === 'dashboard' && <DashboardStats />}
         
-        {activeTab === 'browse' && (
+        {!showSettings && activeTab === 'browse' && (
           <>
             {/* Search and Filters */}
             <div className="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm">
@@ -491,7 +564,7 @@ const StudentDashboard = () => {
           </>
         )}
         
-        {activeTab === 'registered' && (
+        {!showSettings && activeTab === 'registered' && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registered Events</h2>
             {userEvents.length > 0 ? (
