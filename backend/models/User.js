@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
     validate: {
-      validator: function(email) {
+      validator: function (email) {
         const allowedDomains = [
           'gmail.com',
           'outlook.com',
@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
         ];
         // Extract domain from email
         const domain = email.split('@')[1];
-        return allowedDomains.some(allowedDomain => 
+        return allowedDomains.some(allowedDomain =>
           domain === allowedDomain || domain.endsWith('.' + allowedDomain)
         );
       },
@@ -70,15 +70,15 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    
+
     // Update passwordChangedAt field
     this.passwordChangedAt = Date.now() - 1000;
     next();
@@ -88,12 +88,12 @@ userSchema.pre('save', async function(next) {
 });
 
 // Method to compare passwords
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Method to check if password was changed after token was issued
-userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
     const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
     return JWTTimestamp < changedTimestamp;

@@ -100,7 +100,7 @@ exports.getProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     res.status(200).json({
       success: true,
       user
@@ -135,7 +135,7 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const user = await User.findById(userId)
       .select('-password -resetToken -resetTokenExpiry -passwordChangedAt');
 
@@ -157,7 +157,7 @@ exports.getUserById = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     // Check if user exists
     const user = await User.findById(userId);
     if (!user) {

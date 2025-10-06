@@ -15,10 +15,10 @@ exports.registerForEvent = async (req, res) => {
 
     // Check if registration is open
     if (!event.registration_open) {
-      return res.status(400).json({ 
-        error: event.current_registrations >= event.registration_limit 
-          ? 'Event is full' 
-          : 'Registration is closed for this event' 
+      return res.status(400).json({
+        error: event.current_registrations >= event.registration_limit
+          ? 'Event is full'
+          : 'Registration is closed for this event'
       });
     }
 
@@ -29,7 +29,7 @@ exports.registerForEvent = async (req, res) => {
     });
 
     if (existingRegistration) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'You are already registered for this event',
         status: existingRegistration.status
       });
@@ -117,8 +117,8 @@ exports.getEventRegistrations = async (req, res) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    const isAuthorized = event.created_by.toString() === req.user.id || 
-                        ['college_admin', 'super_admin'].includes(req.user.role);
+    const isAuthorized = event.created_by.toString() === req.user.id ||
+      ['college_admin', 'super_admin'].includes(req.user.role);
 
     if (!isAuthorized) {
       return res.status(403).json({ error: 'Not authorized to view registrations' });
@@ -151,14 +151,14 @@ exports.updateRegistrationStatus = async (req, res) => {
 
     const registration = await Registration.findById(registrationId)
       .populate('event_id');
-    
+
     if (!registration) {
       return res.status(404).json({ error: 'Registration not found' });
     }
 
     // Check if user is authorized (event creator or admin)
-    const isAuthorized = registration.event_id.created_by.toString() === req.user.id || 
-                        ['college_admin', 'super_admin'].includes(req.user.role);
+    const isAuthorized = registration.event_id.created_by.toString() === req.user.id ||
+      ['college_admin', 'super_admin'].includes(req.user.role);
 
     if (!isAuthorized) {
       return res.status(403).json({ error: 'Not authorized to update registration' });

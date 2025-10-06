@@ -30,8 +30,8 @@ exports.createEvent = async (req, res) => {
     // Validate required fields
     if (!title || !description || !category || !location || !start_date || !end_date || !registration_limit) {
       if (req.file) deleteUploadedFile(req.file.path);
-      return res.status(400).json({ 
-        error: 'Please provide all required fields: title, description, category, location, start_date, end_date, registration_limit' 
+      return res.status(400).json({
+        error: 'Please provide all required fields: title, description, category, location, start_date, end_date, registration_limit'
       });
     }
 
@@ -123,10 +123,10 @@ exports.createEvent = async (req, res) => {
 
   } catch (error) {
     console.error('Create event error:', error);
-    
+
     // Delete uploaded file if there was an error
     if (req.file) deleteUploadedFile(req.file.path);
-    
+
     // Handle validation errors
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
@@ -265,8 +265,8 @@ exports.updateEvent = async (req, res) => {
     }
 
     // Check if user can update (creator or admin)
-    const canUpdate = event.created_by.toString() === req.user.id || 
-                     ['college_admin', 'super_admin'].includes(req.user.role);
+    const canUpdate = event.created_by.toString() === req.user.id ||
+      ['college_admin', 'super_admin'].includes(req.user.role);
 
     if (!canUpdate) {
       return res.status(403).json({ error: 'You can only update events you created' });
@@ -278,7 +278,7 @@ exports.updateEvent = async (req, res) => {
     }
 
     const allowedUpdates = [
-      'title', 'description', 'location', 'start_date', 'end_date', 
+      'title', 'description', 'location', 'start_date', 'end_date',
       'registration_limit', 'price', 'tags', 'registration_deadline'
     ];
 
@@ -293,11 +293,11 @@ exports.updateEvent = async (req, res) => {
     if (updates.start_date || updates.end_date) {
       const startDate = new Date(updates.start_date || event.start_date);
       const endDate = new Date(updates.end_date || event.end_date);
-      
+
       if (startDate <= new Date()) {
         return res.status(400).json({ error: 'Start date must be in the future' });
       }
-      
+
       if (endDate <= startDate) {
         return res.status(400).json({ error: 'End date must be after start date' });
       }
@@ -329,9 +329,9 @@ exports.updateEvent = async (req, res) => {
 
   } catch (error) {
     console.error('Update event error:', error);
-    
+
     if (req.file) deleteUploadedFile(req.file.path);
-    
+
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({ error: validationErrors.join('. ') });
@@ -351,8 +351,8 @@ exports.deleteEvent = async (req, res) => {
     }
 
     // Check if user can delete (creator or admin)
-    const canDelete = event.created_by.toString() === req.user.id || 
-                     ['college_admin', 'super_admin'].includes(req.user.role);
+    const canDelete = event.created_by.toString() === req.user.id ||
+      ['college_admin', 'super_admin'].includes(req.user.role);
 
     if (!canDelete) {
       return res.status(403).json({ error: 'You can only delete events you created' });

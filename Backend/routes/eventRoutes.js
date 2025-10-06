@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
 // File filter for images only
 const fileFilter = (req, file, cb) => {
   const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  
+
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -59,11 +59,11 @@ const handleUploadErrors = (err, req, res, next) => {
       return res.status(400).json({ error: 'Too many files. Only one image allowed.' });
     }
   }
-  
+
   if (err) {
     return res.status(400).json({ error: err.message || 'File upload error' });
   }
-  
+
   next();
 };
 
@@ -105,8 +105,8 @@ router.get('/college/:collegeId', eventController.getEventsByCollege);
 // PROTECTED ROUTES (authentication required)
 
 // Create new event (admin only)
-router.post('/create', 
-  protect, 
+router.post('/create',
+  protect,
   restrictTo('college_admin', 'super_admin'),
   upload.single('image'),
   handleUploadErrors,
@@ -114,7 +114,7 @@ router.post('/create',
 );
 
 // Update event (creator or admin)
-router.patch('/:id', 
+router.patch('/:id',
   protect,
   upload.single('image'),
   handleUploadErrors,
@@ -127,15 +127,15 @@ router.delete('/:id', protect, eventController.deleteEvent);
 // ADMIN ONLY ROUTES
 
 // Toggle featured status
-router.patch('/:id/featured', 
-  protect, 
+router.patch('/:id/featured',
+  protect,
   restrictTo('college_admin', 'super_admin'),
   eventController.toggleFeatured
 );
 
 // Get event statistics
-router.get('/admin/stats', 
-  protect, 
+router.get('/admin/stats',
+  protect,
   restrictTo('college_admin', 'super_admin'),
   eventController.getEventStats
 );
@@ -144,12 +144,12 @@ router.get('/admin/stats',
 router.get('/uploads/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, '..', 'uploads', 'events', filename);
-  
+
   // Check if file exists
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Image not found' });
   }
-  
+
   // Set appropriate headers
   res.setHeader('Content-Type', 'image/jpeg'); // Default, will be overridden by sendFile
   res.sendFile(filePath);
@@ -164,14 +164,14 @@ router.get('/:eventId/registration/status', protect, registrationController.getR
 router.post('/:eventId/register', protect, registrationController.registerForEvent);
 
 // Get all registrations for an event (admin only)
-router.get('/:eventId/registrations', 
+router.get('/:eventId/registrations',
   protect,
   registrationController.getEventRegistrations
 );
 
 // Update registration status (admin only)
-router.patch('/registrations/:registrationId', 
-  protect, 
+router.patch('/registrations/:registrationId',
+  protect,
   restrictTo('college_admin', 'super_admin'),
   registrationController.updateRegistrationStatus
 );
