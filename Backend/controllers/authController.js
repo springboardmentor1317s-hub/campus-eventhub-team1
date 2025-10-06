@@ -10,6 +10,46 @@ const generateToken = (userId) => {
   });
 };
 
+// Update user profile Settings page
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email, password, college, role } = req.body;
+
+    // If the request contains forbidden fields
+    if (password || college || role) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot update password, college, or role here."
+      });
+    }
+
+    // Only allow updating name & email
+    const updates = {};
+    if (name) updates.name = name;
+    if (email) updates.email = email;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select("-password -resetToken -resetTokenExpiry -passwordChangedAt");
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Server error. Could not update profile." });
+  }
+};
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password, college, role } = req.body;
