@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ProfileSettings from "../components/ProfileSettings"
 
 const StudentDashboard = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, token } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('browse');
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,7 +17,14 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [events, setEvents] = useState([]);
-  
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // function to handle edit profile
+  const handleEditProfile = () => {
+    setShowSettings(true);
+    setShowDropdown(false);
+  };
+
   // Define the categories array
   const categories = useMemo(() => [
     { id: 'all', name: 'All Categories' },
@@ -34,27 +42,27 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Build query parameters
       const queryParams = new URLSearchParams({
         upcoming: 'true',
         limit: '50',
         ...filters
       });
-      
+
       const response = await fetch(`http://localhost:4000/api/events?${queryParams}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch events');
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.data && data.data.events) {
         // Transform backend data to match frontend expectations
         const transformedEvents = data.data.events.map(event => ({
@@ -63,9 +71,9 @@ const StudentDashboard = () => {
           college: event.college_name,
           category: event.category,
           date: event.start_date.split('T')[0], // Extract date part
-          time: new Date(event.start_date).toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+          time: new Date(event.start_date).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
           }),
           location: event.location,
           participants: event.current_registrations || 0,
@@ -73,14 +81,14 @@ const StudentDashboard = () => {
           image: event.image ? `http://localhost:4000${event.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
           description: event.description,
           tags: event.tags || [],
-          registrationDeadline: event.registration_deadline ? 
-            event.registration_deadline.split('T')[0] : 
+          registrationDeadline: event.registration_deadline ?
+            event.registration_deadline.split('T')[0] :
             event.start_date.split('T')[0],
           fee: event.price || 0,
           rating: event.rating?.average || 0,
           status: event.registration_open ? 'open' : 'closed'
         }));
-        
+
         setEvents(transformedEvents);
       }
     } catch (error) {
@@ -132,7 +140,7 @@ const StudentDashboard = () => {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'open': return 'text-green-600 bg-green-100';
       case 'filling_fast': return 'text-orange-600 bg-orange-100';
       case 'closed': return 'text-red-600 bg-red-100';
@@ -151,7 +159,7 @@ const StudentDashboard = () => {
           {event.college}
         </div>
       </div>
-      
+
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-xl font-bold text-gray-800 line-clamp-2">{event.title}</h3>
@@ -160,7 +168,7 @@ const StudentDashboard = () => {
             <span className="ml-1 text-sm font-medium">{event.rating}</span>
           </div>
         </div>
-        
+
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {event.tags.map(tag => (
@@ -170,7 +178,7 @@ const StudentDashboard = () => {
             ))}
           </div>
         )}
-        
+
         <div className="space-y-2 mb-4 text-sm text-gray-600">
           <div className="flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
@@ -185,26 +193,25 @@ const StudentDashboard = () => {
             <span>{event.participants}/{event.maxParticipants} registered</span>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="text-lg font-bold text-green-600">₹{event.fee}</div>
           {showRegisterButton && (
             <button
               onClick={() => handleRegister(event.id)}
               disabled={userEvents.some(e => e.id === event.id) || event.participants >= event.maxParticipants}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                userEvents.some(e => e.id === event.id)
-                  ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                  : event.participants >= event.maxParticipants
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${userEvents.some(e => e.id === event.id)
+                ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                : event.participants >= event.maxParticipants
                   ? 'bg-red-100 text-red-700 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
+                }`}
             >
-              {userEvents.some(e => e.id === event.id) 
-                ? 'Registered' 
+              {userEvents.some(e => e.id === event.id)
+                ? 'Registered'
                 : event.participants >= event.maxParticipants
-                ? 'Full'
-                : 'View Details'  /* Changed from "Register" to "View Details" */
+                  ? 'Full'
+                  : 'View Details'  /* Changed from "Register" to "View Details" */
               }
             </button>
           )}
@@ -224,7 +231,7 @@ const StudentDashboard = () => {
           <Calendar className="w-8 h-8 text-blue-200" />
         </div>
       </div>
-      
+
       <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -234,7 +241,7 @@ const StudentDashboard = () => {
           <CheckCircle className="w-8 h-8 text-green-200" />
         </div>
       </div>
-      
+
       <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -244,7 +251,7 @@ const StudentDashboard = () => {
           <Trophy className="w-8 h-8 text-purple-200" />
         </div>
       </div>
-      
+
     </div>
   );
 
@@ -256,13 +263,13 @@ const StudentDashboard = () => {
         try {
           const token = localStorage.getItem('token');
           if (!token) return;
-          
+
           const response = await fetch('http://localhost:4000/api/events/user/registrations', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data.registrations) {
@@ -273,9 +280,9 @@ const StudentDashboard = () => {
                 college: reg.event_id.college_name,
                 category: reg.event_id.category,
                 date: reg.event_id.start_date.split('T')[0],
-                time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit'
                 }),
                 location: reg.event_id.location,
                 participants: reg.event_id.current_registrations || 0,
@@ -293,7 +300,7 @@ const StudentDashboard = () => {
           console.error('Error fetching user registrations:', error);
         }
       };
-      
+
       fetchUserRegistrations();
     }
   }, [activeTab, currentUser]);
@@ -312,10 +319,27 @@ const StudentDashboard = () => {
                 <h1 className="text-2xl font-bold text-gray-900">CampusEventHub</h1>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <Settings className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
-              
+
+            {/* Settings dropdown part */}
+            <div className="flex items-center space-x-4 relative">
+              {/* Settings Icon */}
+              <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 cursor-pointer rounded-full">
+                <Settings className="w-6 h-6 text-gray-600 hover:text-blue-600" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div className="absolute left-1 right-0 top-12 w-40 bg-white border rounded-lg shadow-md z-50">
+                  <button onClick={handleEditProfile} className="flex cursor-pointer items-center gap-2 px-4 py-2 w-full text-left hover:bg-gray-100">
+                    <User className="w-4 h-4 text-gray-600" /> Edit Profile
+                  </button>
+
+                  <button onClick={logout} className="flex items-center cursor-pointer gap-2 px-4 py-2 w-full text-left text-red-600 hover:bg-gray-100">
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
@@ -323,23 +347,22 @@ const StudentDashboard = () => {
                 <div className="hidden md:block">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm font-medium text-gray-700">{currentUser?.name || 'Student'}</p>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      currentUser?.role === 'student' 
-                        ? 'bg-green-100 text-green-800' 
-                        : currentUser?.role === 'college_admin' || currentUser?.role === 'admin'
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${currentUser?.role === 'student'
+                      ? 'bg-green-100 text-green-800'
+                      : currentUser?.role === 'college_admin' || currentUser?.role === 'admin'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {currentUser?.role === 'student' ? 'Student' : 
-                       currentUser?.role === 'college_admin' ? 'Admin' :
-                       currentUser?.role === 'super_admin' ? 'Super Admin' :
-                       'User'}
+                      }`}>
+                      {currentUser?.role === 'student' ? 'Student' :
+                        currentUser?.role === 'college_admin' ? 'Admin' :
+                          currentUser?.role === 'super_admin' ? 'Super Admin' :
+                            'User'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">{currentUser?.college || 'Computer Science'}</p>
                 </div>
-                <LogOut 
-                  className="w-5 h-5 text-gray-400 hover:text-red-500 cursor-pointer" 
+                <LogOut
+                  className="w-5 h-5 text-gray-400 hover:text-red-500 cursor-pointer"
                   onClick={logout}
                 />
               </div>
@@ -360,11 +383,10 @@ const StudentDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`flex items-center space-x-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span>{tab.name}</span>
@@ -376,8 +398,19 @@ const StudentDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {showSettings && (
+          <div className="mb-8">
+            <ProfileSettings
+              currentUser={currentUser}
+              token={token}
+              onBack={() => setShowSettings(false)}
+            />
+          </div>
+        )}
+
         {activeTab === 'dashboard' && <DashboardStats />}
-        
+
         {activeTab === 'browse' && (
           <>
             {/* Search and Filters */}
@@ -421,22 +454,22 @@ const StudentDashboard = () => {
                           {category.name}
                         </option>
                       ))}
-                    </select>                    
-                    
+                    </select>
+
                     {/* Date Dropdown */}
                     <select
-                      value={selectedDateFilter}                  
+                      value={selectedDateFilter}
                       onChange={(e) => setSelectedDateFilter(e.target.value)}
                       className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
                     >
                       {/* Placeholder heading */}
-                      <option value="all" disabled hidden>                  
+                      <option value="all" disabled hidden>
                         Filter by Dates
                       </option>
-                    
-                      {/* Default option */}                  
+
+                      {/* Default option */}
                       <option value="all">All Dates</option>
-                    
+
                       {/* Event dates */}
                       {uniqueDates.map((date) => (
                         <option key={date} value={date}>
@@ -490,7 +523,7 @@ const StudentDashboard = () => {
             )}
           </>
         )}
-        
+
         {activeTab === 'registered' && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registered Events</h2>

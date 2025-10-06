@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building, Trash2, X, MapPin, DollarSign, Tag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ProfileSettings from "../components/ProfileSettings"
 
 const AdminDashboard = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, token } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState({
@@ -26,12 +27,19 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
+  // function to handle edit profile
+  const handleEditProfile = () => {
+    setShowSettings(true);
+    setShowDropdown(false);
+  };
 
   // System health data - will be fetched from API in future updates
   const [systemHealth, setSystemHealth] = useState({
     serverStatus: "Healthy",
-    database: "Connected", 
+    database: "Connected",
     apiResponse: "152ms",
     uptime: "99.9%"
   });
@@ -52,7 +60,7 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const token = getAuthToken();
-      
+
       if (!token) {
         setError('No authentication token found');
         return;
@@ -72,10 +80,10 @@ const AdminDashboard = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Filter events by current user (admin)
-        const adminEvents = data.data.events.filter(event => 
+        const adminEvents = data.data.events.filter(event =>
           event.created_by && event.created_by._id === currentUser?.id
         );
         setEvents(adminEvents);
@@ -95,7 +103,7 @@ const AdminDashboard = () => {
   const fetchAdminStats = async () => {
     try {
       const token = getAuthToken();
-      
+
       if (!token) {
         return;
       }
@@ -130,7 +138,7 @@ const AdminDashboard = () => {
       setUsersLoading(true);
       setUsersError(null);
       const token = getAuthToken();
-      
+
       if (!token) {
         setUsersError('No authentication token found');
         return;
@@ -148,7 +156,7 @@ const AdminDashboard = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setUsers(data.data.users);
       } else {
@@ -167,7 +175,7 @@ const AdminDashboard = () => {
   const fetchUserDetails = async (userId) => {
     try {
       const token = getAuthToken();
-      
+
       if (!token) {
         console.error('No authentication token found');
         return;
@@ -185,7 +193,7 @@ const AdminDashboard = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setSelectedUser(data.data.user);
         setShowUserDetails(true);
@@ -203,7 +211,7 @@ const AdminDashboard = () => {
     try {
       setDeleteUserLoading(true);
       const token = getAuthToken();
-      
+
       if (!token) {
         console.error('No authentication token found');
         return;
@@ -223,7 +231,7 @@ const AdminDashboard = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Remove user from local state
         setUsers(users.filter(user => (user._id || user.id) !== userId));
@@ -251,7 +259,7 @@ const AdminDashboard = () => {
     try {
       setDeleteLoading(true);
       const token = getAuthToken();
-      
+
       if (!token) {
         setError('No authentication token found');
         return;
@@ -270,7 +278,7 @@ const AdminDashboard = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Remove the deleted event from the local state
         setEvents(prevEvents => prevEvents.filter(event => event._id !== eventId));
@@ -328,7 +336,7 @@ const AdminDashboard = () => {
   }, [activeTab, currentUser]);
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'active': return 'text-green-600 bg-green-100';
       case 'upcoming': return 'text-blue-600 bg-blue-100';
       case 'completed': return 'text-gray-600 bg-gray-100';
@@ -353,7 +361,7 @@ const AdminDashboard = () => {
           <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-blue-200" />
         </div>
       </div>
-      
+
       <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -364,7 +372,7 @@ const AdminDashboard = () => {
           <Users className="w-6 h-6 sm:w-8 sm:h-8 text-green-200" />
         </div>
       </div>
-      
+
       <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 sm:p-6 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -375,7 +383,7 @@ const AdminDashboard = () => {
           <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-200" />
         </div>
       </div>
-      
+
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -397,7 +405,7 @@ const AdminDashboard = () => {
           {(event.status || 'upcoming').toUpperCase()}
         </span>
       </div>
-      
+
       <div className="space-y-2 mb-4 text-sm text-gray-600">
         <div className="flex items-center">
           <Calendar className="w-4 h-4 mr-2" />
@@ -421,16 +429,16 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
-      
+
       <div className="flex gap-2">
-        <button 
+        <button
           onClick={() => viewEventDetails(event)}
           className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
           <Eye className="w-4 h-4 inline mr-2" />
           View Details
         </button>
-        <button 
+        <button
           onClick={(e) => handleDeleteEvent(e, event._id)}
           disabled={deleteLoading}
           className="bg-red-100 text-red-700 py-2 px-4 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -500,8 +508,8 @@ const AdminDashboard = () => {
                 {/* Event Image */}
                 {selectedEvent.image && (
                   <div className="w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
-                    <img 
-                      src={`http://localhost:4000${selectedEvent.image}`} 
+                    <img
+                      src={`http://localhost:4000${selectedEvent.image}`}
                       alt={selectedEvent.title}
                       className="w-full h-full object-cover"
                     />
@@ -645,7 +653,7 @@ const AdminDashboard = () => {
         ) : (
           events.slice(0, 3).map(event => (
             <div key={event._id || event.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                 onClick={() => viewEventDetails(event)}>
+              onClick={() => viewEventDetails(event)}>
               <div>
                 <p className="font-medium text-sm text-gray-800">{event.title}</p>
                 <p className="text-xs text-gray-500">{new Date(event.start_date || event.date).toLocaleDateString()}</p>
@@ -687,10 +695,27 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
-              
+
+            {/* settings dropdown part */}
+            <div className="flex items-center space-x-2 sm:space-x-4 relative">
+              {/* Settings Icon */}
+              <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 cursor-pointer rounded-full">
+                <Settings className="w-6 h-6 sm:w-6 sm:h-6 text-gray-600 hover:text-blue-600" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div className="absolute left-1 right-0 top-12 w-40 bg-white border rounded-lg shadow-md z-50">
+                  <button onClick={handleEditProfile} className="flex cursor-pointer items-center gap-2 px-4 py-2 w-full text-left hover:bg-gray-100">
+                    <User className="w-4 h-4 text-gray-600" /> Edit Profile
+                  </button>
+
+                  <button onClick={logout} className="flex items-center cursor-pointer gap-2 px-4 py-2 w-full text-left text-red-600 hover:bg-gray-100">
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -698,26 +723,25 @@ const AdminDashboard = () => {
                 <div className="hidden md:block">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm font-medium text-gray-700">{currentUser?.name || 'Admin'}</p>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      currentUser?.role === 'student' 
-                        ? 'bg-green-100 text-green-800' 
-                        : currentUser?.role === 'college_admin' || currentUser?.role === 'admin'
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${currentUser?.role === 'student'
+                      ? 'bg-green-100 text-green-800'
+                      : currentUser?.role === 'college_admin' || currentUser?.role === 'admin'
                         ? 'bg-blue-100 text-blue-800'
                         : currentUser?.role === 'super_admin'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {currentUser?.role === 'student' ? 'Student' : 
-                       currentUser?.role === 'college_admin' ? 'Admin' :
-                       currentUser?.role === 'super_admin' ? 'Super Admin' :
-                       currentUser?.role === 'admin' ? 'Admin' :
-                       'User'}
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {currentUser?.role === 'student' ? 'Student' :
+                        currentUser?.role === 'college_admin' ? 'Admin' :
+                          currentUser?.role === 'super_admin' ? 'Super Admin' :
+                            currentUser?.role === 'admin' ? 'Admin' :
+                              'User'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">{currentUser?.college || 'College Admin'}</p>
                 </div>
-                <LogOut 
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-red-500 cursor-pointer" 
+                <LogOut
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-red-500 cursor-pointer"
                   onClick={logout}
                 />
               </div>
@@ -734,11 +758,10 @@ const AdminDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-1 py-3 sm:py-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-1 py-3 sm:py-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{tab.name}</span>
@@ -750,6 +773,17 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+
+        {showSettings && (
+          <div className="mb-8">
+            <ProfileSettings
+              currentUser={currentUser}
+              token={token}
+              onBack={() => setShowSettings(false)}
+            />
+          </div>
+        )}
+
         {/* Dashboard Header */}
         <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-6 sm:mb-8">
           <div className="min-w-0">
@@ -757,7 +791,7 @@ const AdminDashboard = () => {
             <p className="mt-1 text-sm text-gray-500">Manage your events and track performance</p>
           </div>
           <div className="flex-shrink-0">
-            <button 
+            <button
               onClick={HandleEventCreation}
               className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
             >
@@ -770,7 +804,7 @@ const AdminDashboard = () => {
 
         {/* Stats Cards - Show on Overview */}
         {activeTab === 'overview' && <DashboardStats />}
-        
+
         {/* User Management Tab */}
         {activeTab === 'user-management' && (
           <div>
@@ -790,9 +824,9 @@ const AdminDashboard = () => {
                     <Filter className="w-4 h-4" />
                     <span>Filter</span>
                   </button>
+                </div>
               </div>
             </div>
-          </div>
 
             {/* Desktop Table View */}
             <div className="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
@@ -818,7 +852,7 @@ const AdminDashboard = () => {
                     <tr>
                       <td colSpan="5" className="px-6 py-8 text-center">
                         <p className="text-sm text-red-500">{usersError}</p>
-                        <button 
+                        <button
                           onClick={fetchUsers}
                           className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
                         >
@@ -848,30 +882,28 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.college}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.role === 'college_admin' ? 'bg-purple-100 text-purple-800' : 
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'college_admin' ? 'bg-purple-100 text-purple-800' :
                             user.role === 'super_admin' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {user.role === 'college_admin' ? 'Admin' : 
-                             user.role === 'super_admin' ? 'Super Admin' : 'Student'}
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                            {user.role === 'college_admin' ? 'Admin' :
+                              user.role === 'super_admin' ? 'Super Admin' : 'Student'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
                             {user.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button 
+                          <button
                             onClick={() => fetchUserDetails(user._id || user.id)}
                             className="text-blue-600 hover:text-blue-900 mr-3"
                           >
                             View
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDeleteUser(user._id || user.id, user.name)}
                             disabled={deleteUserLoading}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -896,7 +928,7 @@ const AdminDashboard = () => {
               ) : usersError ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-red-500">{usersError}</p>
-                  <button 
+                  <button
                     onClick={fetchUsers}
                     className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
                   >
@@ -920,9 +952,8 @@ const AdminDashboard = () => {
                           <div className="text-xs text-gray-500">{user.email}</div>
                         </div>
                       </div>
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                         {user.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
@@ -931,23 +962,22 @@ const AdminDashboard = () => {
                         <span className="text-gray-500">College: </span>
                         <span className="text-gray-900">{user.college}</span>
                       </div>
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.role === 'college_admin' ? 'bg-purple-100 text-purple-800' : 
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'college_admin' ? 'bg-purple-100 text-purple-800' :
                         user.role === 'super_admin' ? 'bg-red-100 text-red-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {user.role === 'college_admin' ? 'Admin' : 
-                         user.role === 'super_admin' ? 'Super Admin' : 'Student'}
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                        {user.role === 'college_admin' ? 'Admin' :
+                          user.role === 'super_admin' ? 'Super Admin' : 'Student'}
                       </span>
                     </div>
                     <div className="mt-3 flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => fetchUserDetails(user._id || user.id)}
                         className="flex-1 text-sm text-blue-600 hover:text-blue-900 font-medium bg-blue-50 hover:bg-blue-100 py-2 px-3 rounded-lg transition-colors"
                       >
                         View
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteUser(user._id || user.id, user.name)}
                         disabled={deleteUserLoading}
                         className="flex-1 text-sm text-red-600 hover:text-red-900 font-medium bg-red-50 hover:bg-red-100 py-2 px-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -980,9 +1010,9 @@ const AdminDashboard = () => {
                     <Filter className="w-4 h-4" />
                     <span>Filter</span>
                   </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
             {/* Desktop Table View */}
             <div className="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
@@ -1027,13 +1057,13 @@ const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button 
+                          <button
                             onClick={() => viewEventDetails(event)}
                             className="text-blue-600 hover:text-blue-900 mr-3"
                           >
                             View
                           </button>
-                          <button 
+                          <button
                             onClick={(e) => handleDeleteEvent(e, event._id)}
                             disabled={deleteLoading}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1082,13 +1112,13 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => viewEventDetails(event)}
                         className="flex-1 text-xs text-blue-600 hover:text-blue-900 font-medium bg-blue-50 hover:bg-blue-100 py-2 px-3 rounded-lg transition-colors"
                       >
                         View Details
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => handleDeleteEvent(e, event._id)}
                         disabled={deleteLoading}
                         className="flex-1 text-xs text-red-600 hover:text-red-900 font-medium bg-red-50 hover:bg-red-100 py-2 px-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1121,7 +1151,7 @@ const AdminDashboard = () => {
             <div className="flex items-center">
               <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
               <p className="text-red-700 text-sm">{error}</p>
-              <button 
+              <button
                 onClick={() => {
                   setError(null);
                   if (currentUser?.id) {
@@ -1154,7 +1184,7 @@ const AdminDashboard = () => {
                     <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <h4 className="text-lg font-medium text-gray-900 mb-2">No Events Created Yet</h4>
                     <p className="text-gray-500 mb-4">Start by creating your first event to manage your campus activities.</p>
-                    <button 
+                    <button
                       onClick={HandleEventCreation}
                       className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
@@ -1179,14 +1209,14 @@ const AdminDashboard = () => {
                   Quick Actions
                 </h3>
                 <div className="space-y-3">
-                  <button 
+                  <button
                     onClick={HandleEventCreation}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium flex items-center justify-center"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create New Event
                   </button>
-              
+
                   <button className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center">
                     <Eye className="w-4 h-4 mr-2" />
                     View All Registrations
@@ -1225,7 +1255,7 @@ const AdminDashboard = () => {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* User Avatar */}
                 <div className="flex items-center space-x-4">
@@ -1237,7 +1267,7 @@ const AdminDashboard = () => {
                     <p className="text-gray-500">{selectedUser.email}</p>
                   </div>
                 </div>
-                
+
                 {/* User Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -1257,26 +1287,24 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Role:</span>
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          selectedUser.role === 'college_admin' ? 'bg-purple-100 text-purple-800' : 
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${selectedUser.role === 'college_admin' ? 'bg-purple-100 text-purple-800' :
                           selectedUser.role === 'super_admin' ? 'bg-red-100 text-red-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {selectedUser.role === 'college_admin' ? 'Admin' : 
-                           selectedUser.role === 'super_admin' ? 'Super Admin' : 'Student'}
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                          {selectedUser.role === 'college_admin' ? 'Admin' :
+                            selectedUser.role === 'super_admin' ? 'Super Admin' : 'Student'}
                         </span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 mb-3">Account Status</h4>
                     <div className="space-y-3">
                       <div>
                         <span className="text-sm font-medium text-gray-500">Status:</span>
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          selectedUser.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${selectedUser.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
                           {selectedUser.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
@@ -1297,7 +1325,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Security Note */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start">
