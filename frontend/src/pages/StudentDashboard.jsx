@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, 
+  MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, 
+  AlertCircle, XCircle, Bell 
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,123 +13,101 @@ const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('browse');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [notifications, setNotifications] = useState(3);
   const [userEvents, setUserEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [events, setEvents] = useState([]);
-  
-  // Define the categories array
-  const categories = useMemo(() => [
-    { id: 'all', name: 'All Categories' },
-    { id: 'technical', name: 'Technical' },
-    { id: 'cultural', name: 'Cultural' },
-    { id: 'sports', name: 'Sports' },
-    { id: 'workshop', name: 'Workshop' },
-    { id: 'seminar', name: 'Seminar' },
-    { id: 'hackathon', name: 'Hackathon' },
-    { id: 'other', name: 'Other' }
-  ], []);
 
-  // API function to fetch events
-  const fetchEvents = useCallback(async (filters = {}) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Build query parameters
-      const queryParams = new URLSearchParams({
-        upcoming: 'true',
-        limit: '50',
-        ...filters
-      });
-      
-      const response = await fetch(`http://localhost:4000/api/events?${queryParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch events');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.events) {
-        // Transform backend data to match frontend expectations
-        const transformedEvents = data.data.events.map(event => ({
-          id: event._id,
-          title: event.title,
-          college: event.college_name,
-          category: event.category,
-          date: event.start_date.split('T')[0], // Extract date part
-          time: new Date(event.start_date).toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          }),
-          location: event.location,
-          participants: event.current_registrations || 0,
-          maxParticipants: event.registration_limit,
-          image: event.image ? `http://localhost:4000${event.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
-          description: event.description,
-          tags: event.tags || [],
-          registrationDeadline: event.registration_deadline ? 
-            event.registration_deadline.split('T')[0] : 
-            event.start_date.split('T')[0],
-          fee: event.price || 0,
-          rating: event.rating?.average || 0,
-          status: event.registration_open ? 'open' : 'closed'
-        }));
-        
-        setEvents(transformedEvents);
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      setError('Failed to load events. Please try again.');
-    } finally {
-      setLoading(false);
+  // Mock data for events
+  const [events, setEvents] = useState([
+    {
+      id: 1,
+      title: "TechFest 2025 - Hackathon",
+      college: "IIT Delhi",
+      category: "hackathon",
+      date: "2025-10-15",
+      time: "09:00 AM",
+      location: "Main Campus, Delhi",
+      participants: 156,
+      maxParticipants: 200,
+      image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400",
+      description: "48-hour coding marathon with prizes worth ₹2 lakhs. Build innovative solutions for real-world problems.",
+      tags: ["Coding", "Innovation", "Team Event"],
+      registrationDeadline: "2025-10-10",
+      fee: 500,
+      rating: 4.8,
+      status: "open"
+    },
+    {
+      id: 2,
+      title: "Inter-College Sports Meet",
+      college: "Delhi University",
+      category: "sports",
+      date: "2025-10-22",
+      time: "08:00 AM",
+      location: "Sports Complex, DU",
+      participants: 89,
+      maxParticipants: 120,
+      image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400",
+      description: "Multi-sport championship featuring basketball, football, cricket, and track events.",
+      tags: ["Sports", "Competition", "Championship"],
+      registrationDeadline: "2025-10-18",
+      fee: 200,
+      rating: 4.6,
+      status: "open"
+    },
+    {
+      id: 3,
+      title: "Cultural Extravaganza",
+      college: "Jamia Millia Islamia",
+      category: "cultural",
+      date: "2025-11-05",
+      time: "06:00 PM",
+      location: "Auditorium, JMI",
+      participants: 234,
+      maxParticipants: 300,
+      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
+      description: "Showcase your artistic talents in dance, music, drama, and fine arts competitions.",
+      tags: ["Arts", "Performance", "Cultural"],
+      registrationDeadline: "2025-11-01",
+      fee: 300,
+      rating: 4.9,
+      status: "open"
+    },
+    {
+      id: 4,
+      title: "AI/ML Workshop Series",
+      college: "IIIT Hyderabad",
+      category: "workshop",
+      date: "2025-10-28",
+      time: "10:00 AM",
+      location: "Lab Block, IIIT-H",
+      participants: 45,
+      maxParticipants: 50,
+      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400",
+      description: "Hands-on workshop on machine learning algorithms and practical AI applications.",
+      tags: ["AI/ML", "Workshop", "Learning"],
+      registrationDeadline: "2025-10-25",
+      fee: 800,
+      rating: 4.7,
+      status: "filling_fast"
     }
-  }, []); // Empty dependency array
+  ]);
 
-  // Load events on component mount
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]); // Add fetchEvents as dependency
+  const categories = [
+    { id: 'all', name: 'All Events', icon: Calendar },
+    { id: 'hackathon', name: 'Hackathons', icon: Code },
+    { id: 'sports', name: 'Sports', icon: Trophy },
+    { id: 'cultural', name: 'Cultural', icon: Palette },
+    { id: 'workshop', name: 'Workshops', icon: BookOpen }
+  ];
 
-  // Debounced fetch events when filters change
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const filters = {};
-      if (selectedCategory && selectedCategory !== 'all') {
-        filters.category = selectedCategory;
-      }
-      if (searchTerm.trim()) {
-        filters.search = searchTerm.trim();
-      }
-      fetchEvents(filters);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [selectedCategory, searchTerm, fetchEvents]);
-
-  // Use useMemo for derived values
-  const uniqueDates = useMemo(() => [
-    ...new Set(events.map(event => new Date(event.date).toISOString().split("T")[0]))
-  ], [events]);
-
-  // Use useMemo for filtered events
-  const filteredEvents = useMemo(() => events.filter(event => {
-    const matchesDate =
-      selectedDateFilter === 'all' ||
-      new Date(event.date).toISOString().split("T")[0] === selectedDateFilter;
-
-    return matchesDate;
-  }), [events, selectedDateFilter]);
-
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         event.college.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
   const handleRegister = (eventId) => {
     // Navigate to the event registration page with the event ID
     navigate(`/event-register/${eventId}`);
@@ -214,7 +196,7 @@ const StudentDashboard = () => {
   );
 
   const DashboardStats = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl">
         <div className="flex items-center justify-between">
           <div>
@@ -244,7 +226,16 @@ const StudentDashboard = () => {
           <Trophy className="w-8 h-8 text-purple-200" />
         </div>
       </div>
-      
+
+      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-orange-100 text-sm">Notifications</p>
+            <p className="text-3xl font-bold">{notifications}</p>
+          </div>
+          <Bell className="w-8 h-8 text-orange-200" />
+        </div>
+      </div>
     </div>
   );
 
@@ -314,29 +305,22 @@ const StudentDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Settings className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+              <div className="relative">
+                <Bell className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+                {notifications > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {notifications}
+                  </span>
+                )}
+              </div>
               
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="hidden md:block">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-700">{currentUser?.name || 'Student'}</p>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      currentUser?.role === 'student' 
-                        ? 'bg-green-100 text-green-800' 
-                        : currentUser?.role === 'college_admin' || currentUser?.role === 'admin'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {currentUser?.role === 'student' ? 'Student' : 
-                       currentUser?.role === 'college_admin' ? 'Admin' :
-                       currentUser?.role === 'super_admin' ? 'Super Admin' :
-                       'User'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">{currentUser?.college || 'Computer Science'}</p>
+                  <p className="text-sm font-medium text-gray-700">{currentUser?.name || 'Student'}</p>
+                  <p className="text-xs text-gray-500">{currentUser?.role || 'Computer Science'}</p>
                 </div>
                 <LogOut 
                   className="w-5 h-5 text-gray-400 hover:text-red-500 cursor-pointer" 
@@ -381,113 +365,44 @@ const StudentDashboard = () => {
         {activeTab === 'browse' && (
           <>
             {/* Search and Filters */}
-            <div className="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm">
-              <div className="space-y-4">
-                {/* Search Bar */}
-                <div className="relative w-full">
+            <div className="mb-8 bg-white p-6 rounded-xl shadow-sm">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search by event name, college, or location..."
+                    placeholder="Search events, colleges..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-
-                {/* Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                  {/* All Events Button */}
-                  <button
-                    onClick={() => { setSearchTerm(''); setSelectedCategory('all'); setSelectedDateFilter('all'); }}
-                    className="bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base order-3 sm:order-1"
-                  >
-                    All Events
-                  </button>
-
-                  {/* Filter Dropdowns Container */}
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1 sm:flex-none order-1 sm:order-2">
-                    {/* Category Dropdown */}
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
+                
+                <div className="flex gap-2 overflow-x-auto">
+                  {categories.map(category => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg whitespace-nowrap transition-colors ${
+                        selectedCategory === category.id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
                     >
-                      <option value="all" disabled hidden>
-                        Filter by Category
-                      </option>
-                      {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>                    
-                    
-                    {/* Date Dropdown */}
-                    <select
-                      value={selectedDateFilter}                  
-                      onChange={(e) => setSelectedDateFilter(e.target.value)}
-                      className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
-                    >
-                      {/* Placeholder heading */}
-                      <option value="all" disabled hidden>                  
-                        Filter by Dates
-                      </option>
-                    
-                      {/* Default option */}                  
-                      <option value="all">All Dates</option>
-                    
-                      {/* Event dates */}
-                      {uniqueDates.map((date) => (
-                        <option key={date} value={date}>
-                          {new Date(date).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <category.icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{category.name}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* Events Grid */}
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading events...</p>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">Error Loading Events</h3>
-                  <p className="text-gray-500 mb-4">{error}</p>
-                  <button
-                    onClick={fetchEvents}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              </div>
-            ) : filteredEvents.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map(event => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEvents.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
           </>
         )}
         
@@ -520,5 +435,6 @@ const StudentDashboard = () => {
   );
 };
 
-// Default export for StudentDashboard component
 export default StudentDashboard;
+
+
