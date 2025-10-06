@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const eventController = require('../controllers/eventController');
+const registrationController = require('../controllers/registrationController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -153,5 +154,29 @@ router.get('/uploads/:filename', (req, res) => {
   res.setHeader('Content-Type', 'image/jpeg'); // Default, will be overridden by sendFile
   res.sendFile(filePath);
 });
+
+// Registration routes
+
+// Get registration status for current user
+router.get('/:eventId/registration/status', protect, registrationController.getRegistrationStatus);
+
+// Register for an event
+router.post('/:eventId/register', protect, registrationController.registerForEvent);
+
+// Get all registrations for an event (admin only)
+router.get('/:eventId/registrations', 
+  protect,
+  registrationController.getEventRegistrations
+);
+
+// Update registration status (admin only)
+router.patch('/registrations/:registrationId', 
+  protect, 
+  restrictTo('college_admin', 'super_admin'),
+  registrationController.updateRegistrationStatus
+);
+
+// Get all registrations for current user
+router.get('/user/registrations', protect, registrationController.getUserRegistrations);
 
 module.exports = router;

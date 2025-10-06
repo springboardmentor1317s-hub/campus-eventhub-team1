@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('browse');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -125,13 +127,8 @@ const StudentDashboard = () => {
   }), [events, selectedDateFilter]);
 
   const handleRegister = (eventId) => {
-    const event = events.find(e => e.id === eventId);
-    if (event && !userEvents.some(e => e.id === eventId)) {
-      setUserEvents([...userEvents, { ...event, registrationDate: new Date().toISOString(), status: 'registered' }]);
-      setEvents(events.map(e => 
-        e.id === eventId ? { ...e, participants: e.participants + 1 } : e
-      ));
-    }
+    // Navigate to the event registration page with the event ID
+    navigate(`/event-register/${eventId}`);
   };
 
   const getStatusColor = (status) => {
@@ -163,8 +160,6 @@ const StudentDashboard = () => {
             <span className="ml-1 text-sm font-medium">{event.rating}</span>
           </div>
         </div>
-        
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
         
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
@@ -209,7 +204,7 @@ const StudentDashboard = () => {
                 ? 'Registered' 
                 : event.participants >= event.maxParticipants
                 ? 'Full'
-                : 'Register'
+                : 'View Details'  /* Changed from "Register" to "View Details" */
               }
             </button>
           )}
@@ -252,6 +247,56 @@ const StudentDashboard = () => {
       
     </div>
   );
+
+  // Update in StudentDashboard.jsx - modify the useEffect section
+  useEffect(() => {
+    // Fetch user's registered events if on the 'registered' tab
+    if (activeTab === 'registered' && currentUser?.id) {
+      const fetchUserRegistrations = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          
+          const response = await fetch('http://localhost:4000/api/events/user/registrations', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data.registrations) {
+              // Extract events from registrations
+              const registeredEvents = data.data.registrations.map(reg => ({
+                id: reg.event_id._id,
+                title: reg.event_id.title,
+                college: reg.event_id.college_name,
+                category: reg.event_id.category,
+                date: reg.event_id.start_date.split('T')[0],
+                time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                }),
+                location: reg.event_id.location,
+                participants: reg.event_id.current_registrations || 0,
+                maxParticipants: reg.event_id.registration_limit,
+                image: reg.event_id.image ? `http://localhost:4000${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
+                description: reg.event_id.description,
+                fee: reg.event_id.price || 0,
+                status: reg.status === 'approved' ? 'approved' : reg.status === 'pending' ? 'pending' : 'rejected',
+                registrationStatus: reg.status
+              }));
+              setUserEvents(registeredEvents);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user registrations:', error);
+        }
+      };
+      
+      fetchUserRegistrations();
+    }
+  }, [activeTab, currentUser]);
 
   return (
     <div className="min-h-screen bg-gray-50">
