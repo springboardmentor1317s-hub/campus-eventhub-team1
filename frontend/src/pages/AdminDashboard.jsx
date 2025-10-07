@@ -3,6 +3,7 @@ import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSqu
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProfileSettings from '../components/ProfileSettings';
+import Event from '../components/EventRegistrationManagement';
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -1179,17 +1180,16 @@ const AdminDashboard = () => {
         )}
 
         {/* Registrations Tab Content */}
-        {!showSettings && activeTab === 'registrations' && (
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-center py-12">
-              <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Registration Management</h3>
-              <p className="text-gray-500">Detailed registration management will be implemented in Milestone 3.</p>
-            </div>
-          </div>
-        )}
-
-
+{!showSettings && activeTab === 'registrations' && (
+  <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+  
+      {/* Embed the Event page here */}
+      <div className="w-full h-full border rounded-lg shadow-sm p-4">
+        <Event /> {/* Renders your existing Event page */}
+      </div>
+    </div>
+  
+)}
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
