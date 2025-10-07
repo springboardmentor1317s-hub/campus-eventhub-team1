@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, XCircle, Clock, Users, ArrowLeft, Download } from 'lucide-react';
 
+import { Link } from "react-router-dom";
+
 /**
  * Detailed view for managing registrations of a single event.
  * Matches the requested UI exactly.
@@ -14,10 +16,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
   const mockRegistrationData = [
     { _id: 'reg1', student: { name: 'Rahul Kumar', email: 'rahul@college.edu' }, college: 'IIT Kanpur', registration_date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'Pending' },
     { _id: 'reg2', student: { name: 'Priya Sharma', email: 'priya@college.edu' }, college: 'BHU Varanasi', registration_date: new Date(Date.now() - 86400000 * 4).toISOString(), status: 'Approved' },
-    { _id: 'reg3', student: { name: 'Amit Patel', email: 'amit@college.edu' }, college: 'IIT Allahabad', registration_date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'Pending' },
-    { _id: 'reg4', student: { name: 'Kirti Singh', email: 'kirti@college.edu' }, college: 'NIT Delhi', registration_date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'Rejected' },
-    { _id: 'reg5', student: { name: 'Vikram Yadav', email: 'vikram@college.edu' }, college: 'DTU Delhi', registration_date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'Approved' },
-    { _id: 'reg6', student: { name: 'Sneha Jain', email: 'sneha@college.edu' }, college: 'Jadavpur Univ', registration_date: new Date().toISOString(), status: 'Pending' },
+   
   ];
   // --- END MOCK DATA ---
 
@@ -64,20 +63,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
     <div className="p-4 sm:p-6 lg:p-8">
       
       {/* Header and Back Button (Matches Top Left Corner) */}
-      <div className="mb-6 border-b pb-4">
-        <button 
-          onClick={onBack} 
-          className="text-blue-600 hover:text-blue-800 flex items-center mb-4 transition-colors text-sm font-medium"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Event List
-        </button>
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-            Registration Management
-        </h2>
-        <h3 className="text-xl font-semibold text-gray-700 mt-2">
-            Event: {eventTitle}
-        </h3>
-      </div>
+     
 
       {/* Registration Stats Cards (Matches Image) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -166,14 +152,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
             ))}
           </div>
           
-          {/* Export CSV Button */}
-          <button
-            onClick={() => alert('Download Initiated!')}
-            className="flex items-center justify-center sm:w-auto w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </button>
+        
         </div>
       </div>
 
