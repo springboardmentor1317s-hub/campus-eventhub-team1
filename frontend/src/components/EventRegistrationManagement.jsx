@@ -1,39 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, Clock, Users, ArrowLeft, Download } from 'lucide-react';
-
+import { Search, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import { Link } from "react-router-dom";
 
-/**
- * Detailed view for managing registrations of a single event.
- * Matches the requested UI exactly.
- * @param {object} props
- * @param {string} props.eventTitle - The title of the event being viewed.
- * @param {function} props.onBack - Function to return to the previous view (event list).
- */
 const EventRegistrations = ({ eventTitle, onBack }) => {
-  // --- MOCK DATA ---
-  // In a real application, this data would be fetched from an API using the eventId.
+  // --- MOCK DATA (each registration now includes eventType) ---
   const mockRegistrationData = [
-    { _id: 'reg1', student: { name: 'Rahul Kumar', email: 'rahul@college.edu' }, college: 'IIT Kanpur', registration_date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'Pending' },
-    { _id: 'reg2', student: { name: 'Priya Sharma', email: 'priya@college.edu' }, college: 'BHU Varanasi', registration_date: new Date(Date.now() - 86400000 * 4).toISOString(), status: 'Approved' },
-   
+    { _id: 'reg1', student: { name: 'Rahul Kumar', email: 'rahul@college.edu' }, college: 'IIT Kanpur', registration_date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'Pending', eventType: 'Workshop' },
+    { _id: 'reg2', student: { name: 'Priya Sharma', email: 'priya@college.edu' }, college: 'BHU Varanasi', registration_date: new Date(Date.now() - 86400000 * 4).toISOString(), status: 'Approved', eventType: 'Cultural' },
+    { _id: 'reg3', student: { name: 'Amit Singh', email: 'amit@college.edu' }, college: 'IIT Bombay', registration_date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'Pending', eventType: 'Technical' },
+    { _id: 'reg4', student: { name: 'Sneha Patel', email: 'sneha@college.edu' }, college: 'NIT Trichy', registration_date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'Pending', eventType: 'Workshop' },
+    { _id: 'reg5', student: { name: 'Arjun Verma', email: 'arjun@college.edu' }, college: 'IIT Delhi', registration_date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'Rejected', eventType: 'Sports' },
   ];
   // --- END MOCK DATA ---
 
   const [registrations, setRegistrations] = useState(mockRegistrationData);
-  const [loading, setLoading] = useState(false); // Set to false since we use static mock data
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('All'); // Current filter: All, Pending, Approved, Rejected
+  const [filter, setFilter] = useState('All');
+  const [selectedEvent, setSelectedEvent] = useState('All'); // 🔹 NEW STATE for event dropdown
 
-  // Function to handle local status update for UI demonstration
   const handleStatusUpdate = (registrationId, newStatus) => {
-    setRegistrations(regs => regs.map(reg =>
-      reg._id === registrationId ? { ...reg, status: newStatus } : reg
-    ));
-    // NOTE: Add your API call here to persist the change to the backend.
+    setRegistrations(regs =>
+      regs.map(reg =>
+        reg._id === registrationId ? { ...reg, status: newStatus } : reg
+      )
+    );
+    // NOTE: Add backend API update call here
   };
-  
-  // Helper to determine badge colors
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Approved': return 'text-green-700 bg-green-100 border-green-200';
@@ -43,32 +37,49 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
     }
   };
 
-  // Filter and search logic
+  // 🔹 Filtering by search, status, and selected event
   const filteredRegistrations = registrations.filter(reg => {
+    const matchesEvent = selectedEvent === 'All' || reg.eventType === selectedEvent;
     const matchesFilter = filter === 'All' || reg.status === filter;
     const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = reg.student.name.toLowerCase().includes(searchLower) ||
-                          reg.student.email.toLowerCase().includes(searchLower) ||
-                          reg.college.toLowerCase().includes(searchLower);
-    return matchesFilter && matchesSearch;
+    const matchesSearch =
+      reg.student.name.toLowerCase().includes(searchLower) ||
+      reg.student.email.toLowerCase().includes(searchLower) ||
+      reg.college.toLowerCase().includes(searchLower);
+    return matchesEvent && matchesFilter && matchesSearch;
   });
 
-  // Calculate stats for the cards
-  const total = registrations.length;
-  const pending = registrations.filter(r => r.status === 'Pending').length;
-  const approved = registrations.filter(r => r.status === 'Approved').length;
-  const rejected = registrations.filter(r => r.status === 'Rejected').length;
+  // Stats
+  const total = filteredRegistrations.length;
+  const pending = filteredRegistrations.filter(r => r.status === 'Pending').length;
+  const approved = filteredRegistrations.filter(r => r.status === 'Approved').length;
+  const rejected = filteredRegistrations.filter(r => r.status === 'Rejected').length;
+
+  const eventOptions = ['All', 'Technical', 'Cultural', 'Sports', 'Workshop', 'Seminar', 'Hackathon', 'Other'];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       
-      {/* Header and Back Button (Matches Top Left Corner) */}
-     
+      {/* 🔹 Event Selection Dropdown (Top-Left) */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <label className="text-gray-800 font-bold text-lg">Select Event:</label>
+          <select
+            value={selectedEvent}
+            onChange={(e) => setSelectedEvent(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+          >
+            {eventOptions.map((event) => (
+              <option key={event} value={event}>
+                {event}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-      {/* Registration Stats Cards (Matches Image) */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        
-        {/* Total Registrations Card */}
         <div className="bg-white p-4 rounded-xl shadow-md border border-gray-200 flex items-center justify-between">
           <div>
             <p className="text-gray-500 text-sm">Total Registrations</p>
@@ -77,8 +88,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
           <Users className="w-8 h-8 text-blue-500" />
         </div>
 
-        {/* Pending Card (Clickable to Filter) */}
-        <div 
+        <div
           className={`p-4 rounded-xl shadow-md border cursor-pointer transition-all ${filter === 'Pending' ? 'bg-yellow-100 border-yellow-400' : 'bg-white border-gray-200'}`}
           onClick={() => setFilter(filter === 'Pending' ? 'All' : 'Pending')}
         >
@@ -91,8 +101,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
           </div>
         </div>
 
-        {/* Approved Card (Clickable to Filter) */}
-        <div 
+        <div
           className={`p-4 rounded-xl shadow-md border cursor-pointer transition-all ${filter === 'Approved' ? 'bg-green-100 border-green-400' : 'bg-white border-gray-200'}`}
           onClick={() => setFilter(filter === 'Approved' ? 'All' : 'Approved')}
         >
@@ -105,8 +114,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
           </div>
         </div>
 
-        {/* Rejected Card (Clickable to Filter) */}
-        <div 
+        <div
           className={`p-4 rounded-xl shadow-md border cursor-pointer transition-all ${filter === 'Rejected' ? 'bg-red-100 border-red-400' : 'bg-white border-gray-200'}`}
           onClick={() => setFilter(filter === 'Rejected' ? 'All' : 'Rejected')}
         >
@@ -119,11 +127,10 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
           </div>
         </div>
       </div>
-      
-      {/* Search, Filters, and Export Button (Matches Image) */}
+
+      {/* Search and Filter Buttons */}
       <div className="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6">
         <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
-          {/* Search Input */}
           <div className="relative w-full sm:flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -134,8 +141,6 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          
-          {/* Filter Buttons */}
           <div className="flex space-x-2 overflow-x-auto p-1">
             {['All', 'Pending', 'Approved', 'Rejected'].map(status => (
               <button
@@ -151,23 +156,22 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
               </button>
             ))}
           </div>
-          
-        
         </div>
       </div>
 
-      {/* Registration Table (Matches Image) */}
+      {/* Registration Table */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
         {loading ? (
           <div className="text-center p-10 text-gray-500">Loading registrations...</div>
         ) : filteredRegistrations.length === 0 ? (
-          <div className="text-center p-10 text-gray-500">No registrations found matching your criteria.</div>
+          <div className="text-center p-10 text-gray-500">No registrations found for this event.</div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STUDENT</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">COLLEGE</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EVENT TYPE</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">REGISTRATION DATE</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STATUS</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ACTIONS</th>
@@ -178,7 +182,6 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
                 <tr key={reg._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {/* Avatar Placeholder */}
                       <div className="flex-shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                         {reg.student.name[0]}
                       </div>
@@ -189,6 +192,7 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.college}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.eventType}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(reg.registration_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
