@@ -9,6 +9,8 @@ const { resetPassword } = require("../controllers/authController.js");
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/profile', protect, authController.getProfile);
+router.put('/profile', protect, authController.updateProfile);
+router.put('/change-password', protect, authController.changePassword);
 
 // Admin-only routes
 router.get('/admin/users', protect, restrictTo('college_admin', 'super_admin'), authController.getAllUsers);

@@ -1,7 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building, Trash2, X, MapPin, DollarSign, Tag } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building, Trash2, X, MapPin, DollarSign, Tag, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ProfileSettings from '../components/ProfileSettings';
+import Event from '../components/EventRegistrationManagement';
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -18,6 +20,10 @@ const AdminDashboard = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const token = localStorage.getItem('token');
+  const dropdownRef = useRef(null);
 
   // Users data
   const [users, setUsers] = useState([]);
@@ -326,6 +332,34 @@ const AdminDashboard = () => {
       fetchUsers();
     }
   }, [activeTab, currentUser]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle logout with confirmation
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+    }
+    setShowDropdown(false);
+  };
+
+  // Handle settings click
+  const handleSettingsClick = () => {
+    setShowSettings(true);
+    setShowDropdown(false);
+  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -689,7 +723,13 @@ const AdminDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+              {/* Notification Icon */}
+              <div className="relative">
+                <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                  5
+                </span>
+              </div>
               
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
@@ -716,10 +756,35 @@ const AdminDashboard = () => {
                   </div>
                   <p className="text-xs text-gray-500">{currentUser?.college || 'College Admin'}</p>
                 </div>
-                <LogOut 
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-red-500 cursor-pointer" 
-                  onClick={logout}
-                />
+                
+                {/* Settings Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <Settings 
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-blue-600 cursor-pointer" 
+                    onClick={() => setShowDropdown(!showDropdown)}
+                  />
+                  
+                  {/* Dropdown Menu */}
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <button
+                        onClick={handleSettingsClick}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>Account Settings</span>
+                      </button>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -750,7 +815,18 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Show ProfileSettings if showSettings is true */}
+        {showSettings && (
+          <ProfileSettings 
+            currentUser={currentUser} 
+            logout={logout} 
+            token={token}
+            onBack={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Dashboard Header */}
+        {!showSettings && (
         <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-6 sm:mb-8">
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-7 text-gray-900 truncate">Event Organizer Dashboard</h2>
@@ -767,12 +843,13 @@ const AdminDashboard = () => {
             </button>
           </div>
         </div>
+        )}
 
         {/* Stats Cards - Show on Overview */}
-        {activeTab === 'overview' && <DashboardStats />}
+        {!showSettings && activeTab === 'overview' && <DashboardStats />}
         
         {/* User Management Tab */}
-        {activeTab === 'user-management' && (
+        {!showSettings && activeTab === 'user-management' && (
           <div>
             <div className="mb-6 bg-white p-6 rounded-xl shadow-sm">
               <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -963,7 +1040,7 @@ const AdminDashboard = () => {
         )}
 
         {/* Event Management Tab */}
-        {activeTab === 'event-management' && (
+        {!showSettings && activeTab === 'event-management' && (
           <div>
             <div className="mb-6 bg-white p-6 rounded-xl shadow-sm">
               <div className="flex flex-col md:flex-row gap-4">
@@ -1104,17 +1181,16 @@ const AdminDashboard = () => {
         )}
 
         {/* Registrations Tab Content */}
-        {activeTab === 'registrations' && (
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-center py-12">
-              <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Registration Management</h3>
-              <p className="text-gray-500">Detailed registration management will be implemented in Milestone 3.</p>
-            </div>
-          </div>
-        )}
-
-
+{!showSettings && activeTab === 'registrations' && (
+  <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+  
+      {/* Embed the Event page here */}
+      <div className="w-full h-full border rounded-lg shadow-sm p-4">
+        <Event /> {/* Renders your existing Event page */}
+      </div>
+    </div>
+  
+)}
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
@@ -1138,7 +1214,7 @@ const AdminDashboard = () => {
         )}
 
         {/* Overview Tab - Main Dashboard */}
-        {activeTab === 'overview' && (
+        {!showSettings && activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Recent Events */}
             <div className="lg:col-span-2 order-2 lg:order-1">
