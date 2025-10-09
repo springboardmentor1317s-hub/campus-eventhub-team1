@@ -2,31 +2,68 @@ import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import { Link } from "react-router-dom";
 
-const EventRegistrations = ({ eventTitle, onBack }) => {
-  // --- MOCK DATA (each registration now includes eventType) ---
-  const mockRegistrationData = [
-    { _id: 'reg1', student: { name: 'Rahul Kumar', email: 'rahul@college.edu' }, college: 'IIT Kanpur', registration_date: new Date(Date.now() - 86400000 * 5).toISOString(), status: 'Pending', eventType: 'Workshop' },
-    { _id: 'reg2', student: { name: 'Priya Sharma', email: 'priya@college.edu' }, college: 'BHU Varanasi', registration_date: new Date(Date.now() - 86400000 * 4).toISOString(), status: 'Approved', eventType: 'Cultural' },
-    { _id: 'reg3', student: { name: 'Amit Singh', email: 'amit@college.edu' }, college: 'IIT Bombay', registration_date: new Date(Date.now() - 86400000 * 3).toISOString(), status: 'Pending', eventType: 'Technical' },
-    { _id: 'reg4', student: { name: 'Sneha Patel', email: 'sneha@college.edu' }, college: 'NIT Trichy', registration_date: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'Pending', eventType: 'Workshop' },
-    { _id: 'reg5', student: { name: 'Arjun Verma', email: 'arjun@college.edu' }, college: 'IIT Delhi', registration_date: new Date(Date.now() - 86400000 * 1).toISOString(), status: 'Rejected', eventType: 'Sports' },
-  ];
-  // --- END MOCK DATA ---
+const EventRegistrations = () => {
 
-  const [registrations, setRegistrations] = useState(mockRegistrationData);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('All');
-  const [selectedEvent, setSelectedEvent] = useState('All'); // 🔹 NEW STATE for event dropdown
+  const [selectedEvent, setSelectedEvent] = useState('All');
 
-  const handleStatusUpdate = (registrationId, newStatus) => {
-    setRegistrations(regs =>
-      regs.map(reg =>
-        reg._id === registrationId ? { ...reg, status: newStatus } : reg
-      )
-    );
-    // NOTE: Add backend API update call here
+  useEffect(() => {
+    const fetchRegistrations = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('http://localhost:4000/api/events/registrations', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        const result = await res.json();
+        if (result.success) {
+          setRegistrations(result.data);
+        } else {
+          console.error(result.error || 'Failed to load registrations');
+        }
+      } catch (err) {
+        console.error('Fetch registrations error:', err);
+      } finally {
+        setLoading(false);
+      }
   };
+
+  fetchRegistrations();
+}, []);
+
+
+
+  const handleStatusUpdate = async (registrationId, newStatus) => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/events/registrations/${registrationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        setRegistrations((regs) =>
+          regs.map((r) =>
+            r._id === registrationId ? { ...r, status: newStatus } : r
+          )
+        );
+      } else {
+        console.error(result.error || 'Failed to update status');
+      }
+    } catch (err) {
+      console.error('Status update failed:', err);
+    }
+  };
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -191,8 +228,8 @@ const EventRegistrations = ({ eventTitle, onBack }) => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.college}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.eventType}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.student.college}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{reg.event.title}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(reg.registration_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>

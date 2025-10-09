@@ -3,7 +3,7 @@ import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSqu
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProfileSettings from '../components/ProfileSettings';
-import Event from '../components/EventRegistrationManagement';
+import EventRegistrations from '../components/EventRegistrationManagement';
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -1185,7 +1185,7 @@ const AdminDashboard = () => {
   
       {/* Embed the Event page here */}
       <div className="w-full h-full border rounded-lg shadow-sm p-4">
-        <Event /> {/* Renders your existing Event page */}
+        <EventRegistrations /> {/* Renders your existing Event page */}
       </div>
     </div>
   

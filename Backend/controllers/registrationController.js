@@ -186,3 +186,39 @@ exports.updateRegistrationStatus = async (req, res) => {
     res.status(500).json({ error: 'Failed to update registration status' });
   }
 };
+
+// Get all registrations across all events (admin only)
+exports.getAllRegistrations = async (req, res) => {
+  try {
+    if (!['college_admin', 'super_admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Not authorized to view all registrations' });
+    }
+    const registrations = await Registration.find()
+      .populate('user_id', 'name email college')
+      .populate('event_id', 'title event_type category')
+      .sort({ timestamp: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: registrations.length,
+      data: registrations.map(reg => ({
+        _id: reg._id,
+        student: {
+          name: reg.user_id?.name,
+          email: reg.user_id?.email,
+          college: reg.user_id?.college
+        },
+        event: {
+          title: reg.event_id?.title,
+          eventType: reg.event_id?.event_type || reg.event_id?.category
+        },
+        registration_date: reg.timestamp,
+        status: reg.status.charAt(0).toUpperCase() + reg.status.slice(1)
+      }))
+    });
+
+  } catch (error) {
+    console.error('Get all registrations error:', error);
+    res.status(500).json({ error: 'Failed to get all registrations' });
+  }
+};

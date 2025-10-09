@@ -164,6 +164,14 @@ router.patch('/registrations/:registrationId',
   registrationController.updateRegistrationStatus
 );
 
+// Get all registrations
+router.get(
+  '/registrations',
+  protect,
+  restrictTo('college_admin', 'super_admin'),
+  registrationController.getAllRegistrations
+);
+
 // Get all registrations for current user
 router.get('/user/registrations', protect, registrationController.getUserRegistrations);
 
@@ -173,11 +181,6 @@ router.get('/:eventId/registration/status', protect, registrationController.getR
 // Register for an event
 router.post('/:eventId/register', protect, registrationController.registerForEvent);
 
-// Get all registrations for an event (admin only)
-router.get('/:eventId/registrations', 
-  protect,
-  registrationController.getEventRegistrations
-);
 
 
 module.exports = router;
