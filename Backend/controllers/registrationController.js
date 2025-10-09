@@ -35,21 +35,17 @@ exports.registerForEvent = async (req, res) => {
       });
     }
 
-    // Create new registration
+    // Create new registration with pending status
+    // NOTE: Don't increment count yet - only approved registrations count toward capacity
     const registration = await Registration.create({
       event_id: eventId,
       user_id: userId,
       status: 'pending'
     });
 
-    // Update event registration count
-    await Event.findByIdAndUpdate(eventId, {
-      $inc: { current_registrations: 1 }
-    });
-
     res.status(201).json({
       success: true,
-      message: 'Registration successful',
+      message: 'Registration successful. Awaiting approval.',
       data: { registration }
     });
 
@@ -139,6 +135,42 @@ exports.getEventRegistrations = async (req, res) => {
   }
 };
 
+// Get all registrations across all events (admin only)
+exports.getAllRegistrations = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!['college_admin', 'super_admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const registrations = await Registration.find()
+      .populate('user_id', 'name email college')
+      .populate('event_id', 'title category college_name')
+      .sort({ timestamp: -1 });
+
+    // Format the data to include event information
+    const formattedRegistrations = registrations.map(reg => ({
+      _id: reg._id,
+      user_id: reg.user_id,
+      event_id: reg.event_id,
+      eventTitle: reg.event_id?.title,
+      eventType: reg.event_id?.category,
+      status: reg.status,
+      timestamp: reg.timestamp,
+      created_at: reg.created_at
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: { registrations: formattedRegistrations }
+    });
+
+  } catch (error) {
+    console.error('Get all registrations error:', error);
+    res.status(500).json({ error: 'Failed to get all registrations' });
+  }
+};
+
 // Update registration status (admin only)
 exports.updateRegistrationStatus = async (req, res) => {
   try {
@@ -150,7 +182,8 @@ exports.updateRegistrationStatus = async (req, res) => {
     }
 
     const registration = await Registration.findById(registrationId)
-      .populate('event_id');
+      .populate('event_id')
+      .populate('user_id', 'name email');
     
     if (!registration) {
       return res.status(404).json({ error: 'Registration not found' });
@@ -164,16 +197,50 @@ exports.updateRegistrationStatus = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to update registration' });
     }
 
-    // Handle registration count if changing from approved to rejected
-    if (registration.status === 'approved' && status === 'rejected') {
-      await Event.findByIdAndUpdate(registration.event_id, {
-        $inc: { current_registrations: -1 }
-      });
+    const oldStatus = registration.status;
+    
+    // Handle registration count changes based on status transitions
+    if (oldStatus !== status) {
+      // Pending -> Approved: Increment count
+      if (oldStatus === 'pending' && status === 'approved') {
+        await Event.findByIdAndUpdate(registration.event_id._id, {
+          $inc: { current_registrations: 1 }
+        });
+      }
+      // Approved -> Rejected/Pending: Decrement count
+      else if (oldStatus === 'approved' && (status === 'rejected' || status === 'pending')) {
+        await Event.findByIdAndUpdate(registration.event_id._id, {
+          $inc: { current_registrations: -1 }
+        });
+      }
+      // Rejected -> Approved: Increment count
+      else if (oldStatus === 'rejected' && status === 'approved') {
+        await Event.findByIdAndUpdate(registration.event_id._id, {
+          $inc: { current_registrations: 1 }
+        });
+      }
     }
 
     // Update registration status
     registration.status = status;
     await registration.save();
+
+    // Log this activity
+    const ActivityLog = require('../models/ActivityLog');
+    await ActivityLog.create({
+      user_id: req.user.id,
+      action: 'registration_status_update',
+      description: `${status.charAt(0).toUpperCase() + status.slice(1)} registration for ${registration.user_id.name} in event "${registration.event_id.title}"`,
+      details: {
+        registration_id: registrationId,
+        event_id: registration.event_id._id,
+        event_title: registration.event_id.title,
+        student_name: registration.user_id.name,
+        student_email: registration.user_id.email,
+        old_status: oldStatus,
+        new_status: status
+      }
+    });
 
     res.status(200).json({
       success: true,

@@ -43,6 +43,9 @@ export const AuthProvider = ({ children }) => {
     if (userData.role === 'student') {
       console.log("Redirecting to student dashboard");
       navigate('/student/dashboard');
+    } else if (userData.role === 'super_admin') {
+      console.log("Redirecting to super admin dashboard");
+      navigate('/super-admin/dashboard');
     } else {
       console.log("Redirecting to admin dashboard");
       navigate('/admin/dashboard');

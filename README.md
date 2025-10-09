@@ -18,12 +18,15 @@ The platform ensures **secure authentication**, **role-based access control**, a
 
 ## 🎯 Key Features
 
-- 🔐 **Secure Authentication** with role-based access control
+- 🔐 **Secure Authentication** with JWT and role-based access control
 - 👨‍🎓 **Student Dashboard** for event browsing and registration
-- 👩‍💼 **Admin Panel** for event creation and management
+- 👩‍💼 **College Admin Panel** for event and user management
+- 👑 **Super Admin Dashboard** with system-wide control
+- 📊 **Registration Management** with approval workflow
+- 📈 **Real-time Analytics** with interactive charts
 - 🔍 **Advanced Filtering** and search capabilities
 - 📱 **Responsive Design** across all devices
-- ⚡ **Real-time Updates** for event information
+- 📋 **Activity Logging** for audit trails
 
 ---
 
@@ -34,11 +37,14 @@ The platform ensures **secure authentication**, **role-based access control**, a
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white)
 
 ### Backend
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Multer](https://img.shields.io/badge/Multer-F46519?style=for-the-badge&logo=files&logoColor=white)
 
 ### Development Tools
 ![VS Code](https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)
@@ -84,10 +90,13 @@ The platform ensures **secure authentication**, **role-based access control**, a
 ```javascript
 {
   name: String,
-  email: String,
-  password: String (hashed),
+  email: String (validated),
+  password: String (hashed with bcrypt),
   college: String,
-  role: ['student', 'admin']
+  role: ['student', 'college_admin', 'super_admin'],
+  approval_status: ['pending', 'approved', 'rejected'],
+  isActive: Boolean,
+  createdAt: Date
 }
 ```
 
@@ -96,12 +105,37 @@ The platform ensures **secure authentication**, **role-based access control**, a
 {
   title: String,
   description: String,
-  category: String,
+  category: ['Technical', 'Cultural', 'Sports', 'Workshop', 'Hackathon'],
   location: String,
-  startDate: Date,
-  endDate: Date,
-  createdBy: ObjectId,
-  image: String
+  college_name: String,
+  start_date: Date,
+  end_date: Date,
+  registration_limit: Number,
+  current_registrations: Number,
+  created_by: ObjectId,
+  image: String,
+  status: ['upcoming', 'active', 'completed']
+}
+```
+
+#### 📝 Registrations
+```javascript
+{
+  event_id: ObjectId,
+  user_id: ObjectId,
+  status: ['pending', 'approved', 'rejected'],
+  timestamp: Date
+}
+```
+
+#### 📋 Activity Logs
+```javascript
+{
+  user_id: ObjectId,
+  action: String,
+  description: String,
+  details: Object,
+  timestamp: Date
 }
 ```
 
@@ -110,19 +144,73 @@ The platform ensures **secure authentication**, **role-based access control**, a
 ## 🎨 UI Screenshots
 
 ### 🔐 Authentication
-| Login Page | Registration Page |
-|------------|-------------------|
-| ![Login](./docs/screenshots/login.png) | ![Register](./docs/screenshots/register.png) |
 
-### 📊 Dashboards
-| Student Dashboard | Admin Dashboard |
-|-------------------|-----------------|
-| ![Student Dashboard](./docs/screenshots/student-dashboard.png) | ![Admin Dashboard](./docs/screenshots/admin-dashboard.png) |
+#### Login Page
+![Login Page](./docs/screenshots/login.png)
 
-### 📝 Event Management
-| Event Creation Form |
-|---------------------|
-| ![Event Form](./docs/screenshots/event-form.png) |
+*Secure login interface with email validation, password requirements, and forgot password functionality*
+
+#### Registration Page
+![Registration Page](./docs/screenshots/register.png)
+
+*User registration with college selection, role assignment, and real-time form validation*
+
+---
+
+### 👨‍🎓 Student Interface
+
+#### Student Dashboard
+![Student Dashboard](./docs/screenshots/student-dashboard.png)
+
+*Personalized dashboard showing registered events, quick stats, and recent registrations with status tracking*
+
+#### Browse Events Page
+![Browse Events](./docs/screenshots/browse-events.png)
+
+*Comprehensive event listing with advanced filters by category, date, and search functionality across all colleges*
+
+#### Event Registration Form
+![Registration Form](./docs/screenshots/registration-form.png)
+
+*Detailed event registration interface with event information, capacity tracking, and confirmation dialog*
+
+---
+
+### 👩‍💼 College Admin Interface
+
+#### Admin Dashboard
+![Admin Dashboard](./docs/screenshots/admin-dashboard.png)
+
+*College admin dashboard with event management, analytics charts, and quick actions panel featuring blue theme*
+
+#### Event Creation Form
+![Event Creation Form](./docs/screenshots/event-creation-form.png)
+
+*Multi-step event creation form with college selection, event details, schedule configuration, and registration settings for seamless event setup*
+
+#### Registration Management
+![Registration Management](./docs/screenshots/registration-management.png)
+
+*Registration approval interface for managing student applications with pending, approved, and rejected status workflow*
+
+---
+
+### 👑 Super Admin Interface
+
+#### User Management
+![User Management](./docs/screenshots/user-management.png)
+
+*Comprehensive user management page where super admin can view, manage, and filter both college admins and students across all institutions*
+
+#### Admin Approval
+![Admin Approval](./docs/screenshots/admin-approval.png)
+
+*College admin approval interface for super admin to review and approve/reject college admin registration requests*
+
+#### Activity Logs
+![Activity Logs](./docs/screenshots/activity-logs.png)
+
+*Complete audit trail showing all administrative actions with timestamps, user details, and action descriptions for accountability and monitoring*
 
 ---
 
@@ -156,9 +244,18 @@ The platform ensures **secure authentication**, **role-based access control**, a
    npm run dev
    ```
 
-4. **Access the Application**
+4. **Create Super Admin (Optional)**
+   ```bash
+   cd Backend
+   node scripts/createSuperAdmin.js
+   ```
+   Default credentials:
+   - Email: `superadmin@campuseventhub.com`
+   - Password: `SuperAdmin@2025`
+
+5. **Access the Application**
    - Frontend: `http://localhost:5173`
-   - Backend API: `http://localhost:3000`
+   - Backend API: `http://localhost:4000`
 
 ---
 
@@ -170,11 +267,14 @@ The platform ensures **secure authentication**, **role-based access control**, a
 - **Test Cases**: Registration/login validation, role-based access, event filtering
 
 ### System Testing
-- ✅ User registration and authentication
-- ✅ Role-based dashboard access
-- ✅ Event creation and management
-- ✅ Event browsing and filtering
-- ✅ Responsive design validation
+- ✅ User registration with email validation
+- ✅ Three-tier role-based access control
+- ✅ Event CRUD operations with image upload
+- ✅ Registration approval workflow
+- ✅ Real-time analytics and charts
+- ✅ Activity logging system
+- ✅ Super admin approval management
+- ✅ Responsive design across devices
 
 ---
 
@@ -202,47 +302,81 @@ npm run build
 
 ### For Students 🎓
 1. **Register/Login** → Access your student dashboard
-2. **Browse Events** → Use filters to find relevant events
+2. **Browse Events** → View events from all colleges with filters
 3. **View Details** → Get comprehensive event information
-4. **Register** → Sign up for events of interest
+4. **Register** → Submit registration (awaits admin approval)
+5. **Track Status** → Monitor your registration status (Pending/Approved/Rejected)
 
-### For Admins 👩‍💼
-1. **Admin Login** → Access administrative dashboard
-2. **Create Events** → Add new events with detailed information
-3. **Manage Events** → Edit, update, or delete existing events
-4. **Monitor** → Track event registrations and engagement
+### For College Admins 👩‍💼
+1. **Admin Login** → Access college-specific admin dashboard
+2. **View Analytics** → See registration statistics and charts
+3. **Create Events** → Add new events for your college
+4. **Manage Registrations** → Approve or reject student applications
+5. **Monitor Students** → View and manage students from your college
+6. **Activity Logs** → Track all administrative actions
+
+### For Super Admin 👑
+1. **Super Admin Login** → Access system-wide dashboard with red theme
+2. **Global Access** → View all events and users across all colleges
+3. **Approve Admins** → Manage college admin approval requests
+4. **System Analytics** → View comprehensive registration analytics
+5. **Full Control** → Complete access to all system features
 
 ---
 
 ## 🎯 Project Milestones
 
 ### ✅ Milestone 1: Authentication & Authorization
-- Secure user registration and login system
-- Role-based dashboard implementation
+- Secure user registration with email validation
 - JWT token-based authentication
+- Role-based access control (Student, College Admin, Super Admin)
+- Password encryption with bcrypt
 
 ### ✅ Milestone 2: Event Management System
-- Admin event creation functionality
-- Student event browsing with advanced filtering
-- Responsive UI components
+- College admin event creation with image upload
+- Student event browsing with category filters
+- Event capacity management
+- Responsive UI with Tailwind CSS
+- Real-time event status updates
+
+### ✅ Milestone 3: Advanced Admin Features & Analytics
+- **Three-tier role system**: Student, College Admin, Super Admin
+- **Registration workflow**: Pending → Approved/Rejected status
+- **Super Admin dashboard**: System-wide control with unique red theme
+- **College Admin approval**: Super admin manages college admin accounts
+- **Real-time analytics**: Chart.js bar graphs showing student participation
+- **Activity logging**: Complete audit trail of admin actions
+- **Data isolation**: College admins see only their college data
+- **Registration management**: Dedicated tab for approval workflow
+- **User management**: Role-based user viewing and filtering
 
 ### 🔄 Future Enhancements
-- Real-time notifications system
+- Real-time push notifications
 - Event feedback and rating system
-- Participant slot management
-- Payment integration
-- Advanced analytics dashboard
+- Payment gateway integration
+- Email notifications for registration status
+- Advanced reporting and exports
 
 ---
 
 ## 📈 Results & Impact
 
-CampusEventHub successfully demonstrates a **functional, secure, and user-friendly** event management ecosystem. The platform provides:
+CampusEventHub successfully demonstrates a **functional, secure, and scalable** event management ecosystem. The platform provides:
 
-- **Enhanced Accessibility**: Centralized event discovery for students
-- **Streamlined Management**: Simplified event creation and administration
-- **Improved Engagement**: Better participation tracking and communication
-- **Scalable Foundation**: Ready for future feature expansions
+- **Enhanced Accessibility**: Students discover events across all colleges
+- **Streamlined Administration**: Intuitive dashboards for event and user management
+- **Data-Driven Insights**: Real-time analytics for better decision making
+- **Secure Workflows**: Approval-based registration system
+- **Role-Based Control**: Three-tier access system with proper isolation
+- **Audit Trail**: Complete activity logging for accountability
+- **Scalable Architecture**: Ready for enterprise deployment
+
+### Key Achievements
+- ✅ **100% Role-Based Access** control implementation
+- ✅ **Real-time Analytics** with Chart.js integration
+- ✅ **Complete CRUD** operations for all entities
+- ✅ **Responsive Design** for mobile and desktop
+- ✅ **Secure Authentication** with JWT and bcrypt
 
 ---
 
