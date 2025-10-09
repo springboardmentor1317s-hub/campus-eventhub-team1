@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle, Bell } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle, Bell, X, BarChart3, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProfileSettings from '../components/ProfileSettings';
+import StudentMyRegistrations from '../components/StudentMyRegistrations';
+import StudentUpcomingEvents from '../components/StudentUpcomingEvents';
+import StudentQuickStats from '../components/StudentQuickStats';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('browse');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventDetails, setShowEventDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [userEvents, setUserEvents] = useState([]);
@@ -163,12 +167,31 @@ const StudentDashboard = () => {
     navigate(`/event-register/${eventId}`);
   };
 
+  const handleViewDetails = (event) => {
+    setSelectedEvent(event);
+    setShowEventDetails(true);
+  };
+
+  const closeEventDetails = () => {
+    setSelectedEvent(null);
+    setShowEventDetails(false);
+  };
+
   const getStatusColor = (status) => {
     switch(status) {
       case 'open': return 'text-green-600 bg-green-100';
       case 'filling_fast': return 'text-orange-600 bg-orange-100';
       case 'closed': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getRegistrationStatusColor = (status) => {
+    switch(status) {
+      case 'approved': return 'text-green-600 bg-green-100 border-green-300';
+      case 'pending': return 'text-yellow-600 bg-yellow-100 border-yellow-300';
+      case 'rejected': return 'text-red-600 bg-red-100 border-red-300';
+      default: return 'text-gray-600 bg-gray-100 border-gray-300';
     }
   };
 
@@ -179,6 +202,12 @@ const StudentDashboard = () => {
         <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(event.status)}`}>
           {event.status.replace('_', ' ').toUpperCase()}
         </div>
+        {/* Show registration status badge for registered events */}
+        {event.registrationStatus && (
+          <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold border ${getRegistrationStatusColor(event.registrationStatus)}`}>
+            {event.registrationStatus.toUpperCase()}
+          </div>
+        )}
         <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
           {event.college}
         </div>
@@ -220,7 +249,7 @@ const StudentDashboard = () => {
         
         <div className="flex items-center justify-between">
           <div className="text-lg font-bold text-green-600">₹{event.fee}</div>
-          {showRegisterButton && (
+          {showRegisterButton ? (
             <button
               onClick={() => handleRegister(event.id)}
               disabled={userEvents.some(e => e.id === event.id) || event.participants >= event.maxParticipants}
@@ -236,8 +265,15 @@ const StudentDashboard = () => {
                 ? 'Registered' 
                 : event.participants >= event.maxParticipants
                 ? 'Full'
-                : 'View Details'  /* Changed from "Register" to "View Details" */
+                : 'Register Now'
               }
+            </button>
+          ) : (
+            <button
+              onClick={() => handleViewDetails(event)}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              View Details
             </button>
           )}
         </div>
@@ -282,8 +318,8 @@ const StudentDashboard = () => {
 
   // Update in StudentDashboard.jsx - modify the useEffect section
   useEffect(() => {
-    // Fetch user's registered events if on the 'registered' tab
-    if (activeTab === 'registered' && currentUser?.id) {
+    // Fetch user's registered events on component mount and when tab changes
+    if (currentUser?.id) {
       const fetchUserRegistrations = async () => {
         try {
           const token = localStorage.getItem('token');
@@ -314,6 +350,10 @@ const StudentDashboard = () => {
                 maxParticipants: reg.event_id.registration_limit,
                 image: reg.event_id.image ? `http://localhost:4000${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
                 description: reg.event_id.description,
+                tags: reg.event_id.tags || [],
+                registrationDeadline: reg.event_id.registration_deadline ? 
+                  reg.event_id.registration_deadline.split('T')[0] : 
+                  reg.event_id.start_date.split('T')[0],
                 fee: reg.event_id.price || 0,
                 status: reg.status === 'approved' ? 'approved' : reg.status === 'pending' ? 'pending' : 'rejected',
                 registrationStatus: reg.status
@@ -328,7 +368,7 @@ const StudentDashboard = () => {
       
       fetchUserRegistrations();
     }
-  }, [activeTab, currentUser]);
+  }, [currentUser]); // Remove activeTab dependency - fetch on mount
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -416,9 +456,9 @@ const StudentDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {[
+              { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
               { id: 'browse', name: 'Browse Events', icon: Search },
-              { id: 'registered', name: 'My Events', icon: Calendar },
-              { id: 'dashboard', name: 'Dashboard', icon: User }
+              { id: 'registered', name: 'My Registrations', icon: Calendar }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -449,7 +489,131 @@ const StudentDashboard = () => {
           />
         )}
 
-        {!showSettings && activeTab === 'dashboard' && <DashboardStats />}
+        {!showSettings && activeTab === 'dashboard' && (
+          <div className="space-y-8">
+            {/* Welcome Section */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Welcome back, {currentUser?.name || 'Student'}!</h1>
+                  <p className="text-blue-100 text-lg">Ready to discover amazing events?</p>
+                </div>
+                <div className="hidden md:block">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+                    <Calendar className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <StudentQuickStats registrations={userEvents} allEvents={events} />
+            
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Recent Registrations */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">Recent Registrations</h2>
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Calendar className="w-5 h-5" />
+                      <span className="text-sm font-medium">{userEvents.length} Total</span>
+                    </div>
+                  </div>
+                  
+                  {userEvents.length > 0 ? (
+                    <div className="space-y-4">
+                      {userEvents.slice(0, 3).map((event) => (
+                        <div
+                          key={event.id}
+                          className="group p-6 bg-gray-50 rounded-xl hover:bg-blue-50 transition-all cursor-pointer border border-gray-200 hover:border-blue-300"
+                          onClick={() => handleViewDetails(event)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  event.registrationStatus === 'approved' ? 'bg-green-500' :
+                                  event.registrationStatus === 'pending' ? 'bg-yellow-500' :
+                                  'bg-red-500'
+                                }`}></div>
+                                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                  {event.title}
+                                </h3>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                                <div className="flex items-center">
+                                  <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                                  {new Date(event.date).toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </div>
+                                <div className="flex items-center">
+                                  <MapPin className="w-4 h-4 mr-2 text-blue-500" />
+                                  {event.college}
+                                </div>
+                                <div className="flex items-center">
+                                  <Users className="w-4 h-4 mr-2 text-blue-500" />
+                                  {event.category}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="ml-4 flex flex-col items-end gap-2">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRegistrationStatusColor(event.registrationStatus)}`}>
+                                {event.registrationStatus.toUpperCase()}
+                              </span>
+                              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {userEvents.length > 3 && (
+                        <div className="text-center pt-4">
+                          <button
+                            onClick={() => setActiveTab('registered')}
+                            className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1 mx-auto"
+                          >
+                            View All Registrations
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Calendar className="w-10 h-10 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Registrations Yet</h3>
+                      <p className="text-gray-500 mb-6">Start exploring and register for exciting events!</p>
+                      <button
+                        onClick={() => setActiveTab('browse')}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Browse Events
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Upcoming Events Sidebar */}
+              <div className="lg:col-span-1">
+                <StudentUpcomingEvents 
+                  events={events} 
+                  onViewDetails={handleViewDetails}
+                  onExploreMore={() => setActiveTab('browse')}
+                />
+              </div>
+            </div>
+          </div>
+        )}
         
         {!showSettings && activeTab === 'browse' && (
           <>
@@ -566,17 +730,16 @@ const StudentDashboard = () => {
         
         {!showSettings && activeTab === 'registered' && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registered Events</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registrations</h2>
             {userEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userEvents.map(event => (
-                  <EventCard key={event.id} event={event} showRegisterButton={false} />
-                ))}
-              </div>
+              <StudentMyRegistrations 
+                registrations={userEvents} 
+                onViewDetails={handleViewDetails}
+              />
             ) : (
               <div className="text-center py-12">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Events Registered</h3>
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Registrations Yet</h3>
                 <p className="text-gray-500 mb-6">Start exploring and register for exciting events!</p>
                 <button
                   onClick={() => setActiveTab('browse')}
@@ -589,6 +752,158 @@ const StudentDashboard = () => {
           </div>
         )}
       </main>
+
+      {/* Event Details Modal */}
+      {showEventDetails && selectedEvent && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgba(17, 24, 39, 0.8)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}
+          onClick={closeEventDetails}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="relative">
+              <img 
+                src={selectedEvent.image} 
+                alt={selectedEvent.title}
+                className="w-full h-64 object-cover rounded-t-xl"
+              />
+              <button
+                onClick={closeEventDetails}
+                className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-800" />
+              </button>
+              {selectedEvent.registrationStatus && (
+                <div className={`absolute top-4 left-4 px-4 py-2 rounded-full font-semibold text-sm backdrop-blur-sm border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                  {selectedEvent.registrationStatus.toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">{selectedEvent.title}</h2>
+              
+              {/* Event Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-4">
+                  <div className="flex items-center text-gray-700">
+                    <Calendar className="w-5 h-5 mr-3 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-500">Date & Time</p>
+                      <p className="font-semibold">{new Date(selectedEvent.date).toLocaleDateString('en-US', { 
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })} at {selectedEvent.time}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center text-gray-700">
+                    <MapPin className="w-5 h-5 mr-3 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-500">Location</p>
+                      <p className="font-semibold">{selectedEvent.location}</p>
+                      <p className="text-sm">{selectedEvent.college}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center text-gray-700">
+                    <Users className="w-5 h-5 mr-3 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-500">Participants</p>
+                      <p className="font-semibold">{selectedEvent.participants} / {selectedEvent.maxParticipants} registered</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center text-gray-700">
+                    <Trophy className="w-5 h-5 mr-3 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-500">Category</p>
+                      <p className="font-semibold capitalize">{selectedEvent.category}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">About This Event</h3>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {selectedEvent.description || 'No description available for this event.'}
+                </p>
+              </div>
+
+              {/* Tags */}
+              {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEvent.tags.map((tag, index) => (
+                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fee */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-6">
+                <span className="text-gray-700 font-medium">Registration Fee</span>
+                <span className="text-2xl font-bold text-green-600">₹{selectedEvent.fee}</span>
+              </div>
+
+              {/* Action Button */}
+              <div className="flex gap-4">
+                {selectedEvent.registrationStatus ? (
+                  <div className="flex-1 text-center">
+                    <div className={`p-4 rounded-lg border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                      <p className="font-semibold text-lg">Registration Status</p>
+                      <p className="text-2xl font-bold mt-2">{selectedEvent.registrationStatus.toUpperCase()}</p>
+                      {selectedEvent.registrationStatus === 'approved' && (
+                        <p className="text-sm mt-2">You're all set! See you at the event.</p>
+                      )}
+                      {selectedEvent.registrationStatus === 'pending' && (
+                        <p className="text-sm mt-2">Your registration is awaiting admin approval.</p>
+                      )}
+                      {selectedEvent.registrationStatus === 'rejected' && (
+                        <p className="text-sm mt-2">Unfortunately, your registration was not approved.</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      closeEventDetails();
+                      handleRegister(selectedEvent.id);
+                    }}
+                    disabled={selectedEvent.participants >= selectedEvent.maxParticipants}
+                    className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-colors ${
+                      selectedEvent.participants >= selectedEvent.maxParticipants
+                        ? 'bg-red-100 text-red-700 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {selectedEvent.participants >= selectedEvent.maxParticipants ? 'Event Full' : 'Register Now'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -7,6 +7,11 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const activityLogRoutes = require('./routes/activityLogRoutes');
+const userRoutes = require('./routes/userRoutes');
+const setupRoutes = require('./routes/setupRoutes');
+const systemHealthRoutes = require('./routes/systemHealthRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 
@@ -27,6 +32,11 @@ startDb();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/logs', activityLogRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/setup', setupRoutes);
+app.use('/api/system', systemHealthRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
