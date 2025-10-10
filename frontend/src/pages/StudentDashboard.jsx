@@ -6,6 +6,7 @@ import ProfileSettings from '../components/ProfileSettings';
 import StudentMyRegistrations from '../components/StudentMyRegistrations';
 import StudentUpcomingEvents from '../components/StudentUpcomingEvents';
 import StudentQuickStats from '../components/StudentQuickStats';
+import Notifications from '../components/Notifications';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -386,13 +387,8 @@ const StudentDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Notification Icon */}
-              <div className="relative">
-                <Bell className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-                  3
-                </span>
-              </div>
+              {/* Notification Component */}
+              <Notifications />
               
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">

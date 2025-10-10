@@ -133,6 +133,15 @@ exports.createEvent = async (req, res) => {
       // Don't fail the request if logging fails
     }
 
+    // Send notifications to all students about the new event
+    try {
+      const { notifyStudentsAboutNewEvent } = require('./notificationController');
+      await notifyStudentsAboutNewEvent(event);
+    } catch (notifError) {
+      console.error('Failed to send notifications:', notifError);
+      // Continue even if notification fails
+    }
+
     res.status(201).json({
       success: true,
       message: 'Event created successfully',

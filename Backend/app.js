@@ -12,6 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const setupRoutes = require('./routes/setupRoutes');
 const systemHealthRoutes = require('./routes/systemHealthRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/system', systemHealthRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

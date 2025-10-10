@@ -242,6 +242,34 @@ exports.updateRegistrationStatus = async (req, res) => {
       }
     });
 
+    // Send notification to student about registration status change
+    try {
+      const { createNotification } = require('./notificationController');
+      let message = '';
+      let notificationType = '';
+      
+      if (status === 'approved') {
+        message = `Your registration for "${registration.event_id.title}" has been approved! See you at the event.`;
+        notificationType = 'registration_approved';
+      } else if (status === 'rejected') {
+        message = `Your registration for "${registration.event_id.title}" was not approved.`;
+        notificationType = 'registration_rejected';
+      }
+      
+      if (message) {
+        await createNotification(
+          registration.user_id._id,
+          message,
+          notificationType,
+          registration.event_id._id,
+          registration._id
+        );
+      }
+    } catch (notifError) {
+      console.error('Failed to send registration status notification:', notifError);
+      // Continue even if notification fails
+    }
+
     res.status(200).json({
       success: true,
       message: `Registration ${status} successfully`,
