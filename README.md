@@ -249,9 +249,7 @@ The platform ensures **secure authentication**, **role-based access control**, a
    cd Backend
    node scripts/createSuperAdmin.js
    ```
-   Default credentials:
-   - Email: `superadmin@campuseventhub.com`
-   - Password: `SuperAdmin@2025`
+   **Note**: Configure super admin credentials in your `.env` file before running the script. See `.env.example` for required variables.
 
 5. **Access the Application**
    - Frontend: `http://localhost:5173`

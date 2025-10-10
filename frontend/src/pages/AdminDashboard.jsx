@@ -734,7 +734,7 @@ const AdminDashboard = () => {
                     y: {
                       beginAtZero: true,
                       ticks: {
-                        stepSize: 1,
+                        precision: 0, // Ensure whole numbers only
                         font: {
                           size: 11
                         }
