@@ -175,6 +175,46 @@ exports.updateRegistrationStatus = async (req, res) => {
     registration.status = status;
     await registration.save();
 
+<<<<<<< Updated upstream
+=======
+    // Log this activity
+    const ActivityLog = require('../models/ActivityLog');
+    await ActivityLog.create({
+      user_id: req.user.id,
+      action: 'registration_status_update',
+      description: `${status.charAt(0).toUpperCase() + status.slice(1)} registration for ${registration.user_id.name} in event "${registration.event_id.title}"`,
+      details: {
+        registration_id: registrationId,
+        event_id: registration.event_id._id,
+        event_title: registration.event_id.title,
+        student_name: registration.user_id.name,
+        student_email: registration.user_id.email,
+        old_status: oldStatus,
+        new_status: status
+      }
+    });
+
+    // Create a notification for the user when their registration status changes
+    try {
+      const Notification = require('../models/Notification');
+      if (status === 'approved' || status === 'rejected') {
+        const message = `Your registration for event \"${registration.event_id.title}\" has been ${status}.`;
+        await Notification.create({
+          user_id: registration.user_id._id || registration.user_id,
+          type: 'registration_update',
+          message,
+          reference: {
+            refModel: 'Registration',
+            refId: registration._id
+          }
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create notification:', notifErr);
+      // Don't block the main response if notification creation fails
+    }
+
+>>>>>>> Stashed changes
     res.status(200).json({
       success: true,
       message: `Registration ${status} successfully`,
