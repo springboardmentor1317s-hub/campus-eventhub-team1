@@ -387,7 +387,10 @@ const StudentDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+<<<<<<< Updated upstream
               {/* Notification Icon / Dropdown */}
+=======
+>>>>>>> Stashed changes
               <Notifications />
               
               <div className="flex items-center space-x-3">

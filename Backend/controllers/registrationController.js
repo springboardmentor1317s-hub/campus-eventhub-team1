@@ -227,6 +227,7 @@ exports.updateRegistrationStatus = async (req, res) => {
 
     // Create notification for the user when approved
     try {
+<<<<<<< Updated upstream
       if (status === 'approved') {
         const Notification = require('../models/Notification');
         await Notification.create({
@@ -240,6 +241,19 @@ exports.updateRegistrationStatus = async (req, res) => {
     } catch (notifErr) {
       console.error('Failed to create notification:', notifErr);
       // don't block main flow for notification errors
+=======
+      const Notification = require('../models/Notification');
+      if (status === 'approved') {
+        await Notification.create({
+          user_id: registration.user_id._id || registration.user_id,
+          message: `Your registration for "${registration.event_id.title}" has been approved.`,
+          link: `/events/${registration.event_id._id}`
+        });
+      }
+    } catch (notifError) {
+      console.error('Failed to create notification:', notifError);
+      // Do not fail the main flow if notification creation fails
+>>>>>>> Stashed changes
     }
 
     // Log this activity
