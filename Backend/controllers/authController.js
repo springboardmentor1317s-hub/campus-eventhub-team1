@@ -208,7 +208,18 @@ exports.changePassword = async (req, res) => {
 // Get all users (Admin only)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({})
+    let query = {};
+
+    // Add search functionality
+    if (req.query.search) {
+      query.$or = [
+        { name: new RegExp(req.query.search, 'i') },
+        { email: new RegExp(req.query.search, 'i') },
+        { college: new RegExp(req.query.search, 'i') }
+      ];
+    }
+
+    const users = await User.find(query)
       .select('-password -resetToken -resetTokenExpiry -passwordChangedAt')
       .sort({ createdAt: -1 });
 
