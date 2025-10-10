@@ -1,35 +1,79 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 
-// Notifications component: fetches user's notifications from backend and shows them
+// Notifications component: polls the user's registrations and shows approvals
 export default function Notifications() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]); // { id, message, timestamp, read }
   const [unreadCount, setUnreadCount] = useState(0);
   const pollingRef = useRef(null);
 
-  const API_BASE = 'http://localhost:4000/api/notifications';
+  const STORAGE_KEY_STATUSES = 'ceh_reg_statuses'; // map regId -> status
+  const STORAGE_KEY_UNREAD = 'ceh_unread_notifications'; // array of regIds
 
-  const fetchNotifications = async () => {
+  const loadStored = () => {
+    try {
+      const statuses = JSON.parse(localStorage.getItem(STORAGE_KEY_STATUSES) || '{}');
+      const unread = JSON.parse(localStorage.getItem(STORAGE_KEY_UNREAD) || '[]');
+      return { statuses, unread };
+    } catch (e) {
+      return { statuses: {}, unread: [] };
+    }
+  };
+
+  const saveStored = (statuses, unread) => {
+    try {
+      localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
+      localStorage.setItem(STORAGE_KEY_UNREAD, JSON.stringify(unread));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const fetchRegistrations = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch(API_BASE, {
+      const res = await fetch('http://localhost:4000/api/events/user/registrations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
       const data = await res.json();
-      if (!data.success || !data.data?.notifications) return;
+      if (!data.success || !data.data?.registrations) return;
 
-      const notifs = data.data.notifications.map(n => ({
-        id: n._id,
-        message: n.message,
-        timestamp: n.created_at || n.createdAt || n.createdAt,
-        read: !!n.read
-      }));
+      const { statuses, unread } = loadStored();
+      let updatedStatuses = { ...statuses };
+      let updatedUnread = Array.isArray(unread) ? [...unread] : [];
+      const newNotifications = [];
 
-      setNotifications(notifs);
-      setUnreadCount(notifs.filter(n => !n.read).length);
+      data.data.registrations.forEach(reg => {
+        const regId = reg._id || reg.id || (reg._doc && reg._doc._id) || (reg._doc && reg._doc.id);
+        const status = reg.status;
+        // If status transitioned to approved and we haven't recorded approved before, create notification
+        if (status === 'approved' && updatedStatuses[regId] !== 'approved') {
+          const message = `Your registration for "${reg.event_id?.title || reg.eventTitle || 'an event'}" has been approved.`;
+          const ts = new Date().toISOString();
+          newNotifications.push({ id: regId, message, timestamp: ts, read: false });
+          if (!updatedUnread.includes(regId)) updatedUnread.push(regId);
+        }
+
+        // Update stored status
+        updatedStatuses[regId] = status;
+      });
+
+      if (newNotifications.length > 0) {
+        // prepend new notifications so newest are first
+        setNotifications(prev => [...newNotifications, ...prev]);
+      }
+
+      // initialize notifications from stored unread if any (helpful after refresh)
+      if (notifications.length === 0 && updatedUnread.length > 0) {
+        const fromStored = updatedUnread.map(id => ({ id, message: 'You have an approved registration', timestamp: new Date().toISOString(), read: false }));
+        setNotifications(prev => [...fromStored, ...prev]);
+      }
+
+      setUnreadCount(updatedUnread.length);
+      saveStored(updatedStatuses, updatedUnread);
     } catch (error) {
       console.error('Notifications fetch error', error);
     }
@@ -37,65 +81,40 @@ export default function Notifications() {
 
   useEffect(() => {
     // Initial fetch
-    fetchNotifications();
+    fetchRegistrations();
 
-    // Poll every 20 seconds
-    pollingRef.current = setInterval(fetchNotifications, 20000);
+    // Poll every 25 seconds
+    pollingRef.current = setInterval(fetchRegistrations, 25000);
     return () => clearInterval(pollingRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const toggleOpen = async () => {
-    const newOpen = !open;
-    setOpen(newOpen);
-    if (newOpen) {
-      // Mark all unread as read on the server
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          await fetch(`${API_BASE}/read/all`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-          });
-          // update local state
-          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-          setUnreadCount(0);
-        }
-      } catch (e) {
-        console.error('Failed to mark notifications read', e);
+  const toggleOpen = () => {
+    setOpen(!open);
+    if (!open) {
+      // Mark all unread as read when opening
+      const { unread, statuses } = loadStored();
+      if (unread.length > 0) {
+        // mark notifications as read in state
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setUnreadCount(0);
+        saveStored(statuses, []);
       }
     }
   };
 
-  const dismissNotification = async (id) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        await fetch(`http://localhost:4000/api/notifications/${id}/read`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-        });
-      }
-    } catch (e) {
-      console.error('Failed to mark notification read', e);
-    }
-
+  const dismissNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    // remove from unread storage
+    const { statuses, unread } = loadStored();
+    const updatedUnread = (unread || []).filter(u => u !== id);
+    saveStored(statuses, updatedUnread);
+    setUnreadCount(updatedUnread.length);
   };
 
-  const markAllRead = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        await fetch(`${API_BASE}/read/all`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-        });
-      }
-    } catch (e) {
-      console.error('Failed to mark all notifications read', e);
-    }
+  const markAllRead = () => {
+    const { statuses } = loadStored();
+    saveStored(statuses, []);
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };
