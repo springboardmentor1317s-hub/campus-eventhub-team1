@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema({
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
     validate: {
       validator: function(email) {
+        // Allow system emails (for super admin)
+        if (email.endsWith('@campuseventhub.com')) {
+          return true;
+        }
+        
         const allowedDomains = [
           'gmail.com',
           'outlook.com',
@@ -53,6 +58,14 @@ const userSchema = new mongoose.Schema({
     },
     default: 'student'
   },
+  approval_status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: function() {
+      // Only college admins need approval
+      return this.role === 'college_admin' ? 'pending' : 'approved';
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -64,7 +77,9 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  passwordChangedAt: Date
+  passwordChangedAt: Date,
+  resetToken: String,
+  resetTokenExpiry: Date
 });
 
 // Hash password before saving

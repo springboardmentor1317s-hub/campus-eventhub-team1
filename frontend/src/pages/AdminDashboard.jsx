@@ -1,8 +1,31 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building, Trash2, X, MapPin, DollarSign, Tag, Bell } from 'lucide-react';
+import { Calendar, Users, TrendingUp, BarChart3, Plus, Download, Eye, MessageSquare, User, LogOut, Settings, Filter, Search, CheckCircle, AlertCircle, XCircle, Clock, Building, Trash2, X, MapPin, DollarSign, Tag, Bell, Activity, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProfileSettings from '../components/ProfileSettings';
+import EventRegistrations from '../components/EventRegistrations';
+import ActivityLogs from '../components/ActivityLogs';
+import CollegeAdminApproval from '../components/CollegeAdminApproval';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const AdminDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -31,18 +54,32 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [deleteUserLoading, setDeleteUserLoading] = useState(false);
-
-
-  // System health data - will be fetched from API in future updates
-  const [systemHealth, setSystemHealth] = useState({
-    serverStatus: "Healthy",
-    database: "Connected", 
-    apiResponse: "152ms",
-    uptime: "99.9%"
-  });
+  const [userRoleFilter, setUserRoleFilter] = useState('student'); // For super admin filter
+  const [userSearchTerm, setUserSearchTerm] = useState(''); // For user search
 
   // Events data - fetched from database
   const [events, setEvents] = useState([]);
+  const [eventSearchTerm, setEventSearchTerm] = useState(''); // For event search
+  
+  // Registration analytics data
+  const [registrationsByCategory, setRegistrationsByCategory] = useState({});
+  
+  // System health data - real-time data from API
+  const [systemHealth, setSystemHealth] = useState({
+    server: { status: 'Loading...' },
+    database: { status: 'Loading...' },
+    api: { status: 'Loading...' },
+    uptime: { percentage: 'Loading...' }
+  });
+
+  // Analytics data - real-time data from API
+  const [analytics, setAnalytics] = useState({
+    activeUsers: { count: 0, change: 0 },
+    averageParticipants: { average: 0, change: 0 },
+    totalEvents: 0,
+    totalRegistrations: 0,
+    monthlyComparison: { events: { change: 0 }, registrations: { change: 0 } }
+  });
 
   // API base URL
   const API_BASE_URL = 'http://localhost:4000/api';
@@ -52,7 +89,7 @@ const AdminDashboard = () => {
     return localStorage.getItem('token');
   };
 
-  // Fetch events created by the current admin
+  // Fetch events created by the current admin (or all events for super admin)
   const fetchAdminEvents = async () => {
     try {
       setLoading(true);
@@ -63,8 +100,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      // Fetch all events and filter by created_by on frontend
-      // We'll use search parameter to get events by current user
+      // Fetch all events
       const response = await fetch(`${API_BASE_URL}/events?limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -79,11 +115,16 @@ const AdminDashboard = () => {
       const data = await response.json();
       
       if (data.success) {
-        // Filter events by current user (admin)
+        // Super admin sees ALL events, college admin sees only their events
+        if (currentUser?.role === 'super_admin') {
+          setEvents(data.data.events); // Show all events
+        } else {
+          // Filter events by current user (college admin)
         const adminEvents = data.data.events.filter(event => 
           event.created_by && event.created_by._id === currentUser?.id
         );
         setEvents(adminEvents);
+        }
       } else {
         throw new Error('Failed to fetch events');
       }
@@ -129,8 +170,112 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fetch analytics data
+  const fetchAnalytics = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/analytics`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAnalytics(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      setAnalytics({
+        activeUsers: { count: 0, change: 0 },
+        averageParticipants: { average: 0, change: 0 },
+        totalEvents: 0,
+        totalRegistrations: 0,
+        monthlyComparison: { events: { change: 0 }, registrations: { change: 0 } }
+      });
+    }
+  };
+
+  // Fetch system health data
+  const fetchSystemHealth = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/system/health`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setSystemHealth(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching system health:', error);
+      setSystemHealth({
+        server: { status: 'Error', message: 'Failed to fetch' },
+        database: { status: 'Error', message: 'Failed to fetch' },
+        api: { status: 'Error', message: 'Failed to fetch' },
+        uptime: { percentage: 'Error' }
+      });
+    }
+  };
+
+  // Fetch registration analytics by category
+  const fetchRegistrationAnalytics = async () => {
+    try {
+      const token = getAuthToken();
+      
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/events/all/registrations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Registration Analytics Data:', data);
+        if (data.success && data.data.registrations) {
+          // Aggregate registrations by event category (all statuses)
+          const categoryMap = {};
+          
+          data.data.registrations.forEach(registration => {
+            if (registration.event_id && registration.event_id.category) {
+              const category = registration.event_id.category;
+              // Count all registrations regardless of status
+              categoryMap[category] = (categoryMap[category] || 0) + 1;
+            }
+          });
+          
+          console.log('Registration by Category:', categoryMap);
+          setRegistrationsByCategory(categoryMap);
+        }
+      } else {
+        console.error('Failed to fetch registrations:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching registration analytics:', error);
+      setRegistrationsByCategory({});
+    }
+  };
+
   // Fetch all users
-  const fetchUsers = async () => {
+  const fetchUsers = async (roleFilter = null) => {
     try {
       setUsersLoading(true);
       setUsersError(null);
@@ -141,7 +286,15 @@ const AdminDashboard = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/admin/users`, {
+      // Build endpoint based on role and filter
+      let endpoint = `${API_BASE_URL}/users`;
+      
+      // Super admin can filter by role; college admin always gets students only (backend filters)
+      if (currentUser?.role === 'super_admin' && roleFilter) {
+        endpoint += `?role=${roleFilter}`;
+      }
+
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -322,15 +475,40 @@ const AdminDashboard = () => {
     if (currentUser?.id) {
       fetchAdminEvents();
       fetchAdminStats();
+      fetchRegistrationAnalytics();
+      fetchSystemHealth();
+      fetchAnalytics();
     }
   }, [currentUser]);
 
-  // Load users when user management tab is active
+  // Auto-refresh system health every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentUser?.id) {
+        fetchSystemHealth();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  // Auto-refresh analytics every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentUser?.id) {
+        fetchAnalytics();
+      }
+    }, 60000); // Refresh every 60 seconds
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  // Load users when user management tab is active or filter changes
   useEffect(() => {
     if (activeTab === 'user-management' && currentUser?.id) {
-      fetchUsers();
+      fetchUsers(currentUser?.role === 'super_admin' ? userRoleFilter : null);
     }
-  }, [activeTab, currentUser]);
+  }, [activeTab, currentUser, userRoleFilter]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -374,53 +552,256 @@ const AdminDashboard = () => {
     navigate('/create-event');
   };
 
-  const DashboardStats = () => (
+  // Filtered events based on search term
+  const filteredEvents = useMemo(() => {
+    if (!eventSearchTerm.trim()) return events;
+    
+    return events.filter(event => 
+      event.title.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+      event.category?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+      event.location?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+      event.description?.toLowerCase().includes(eventSearchTerm.toLowerCase())
+    );
+  }, [events, eventSearchTerm]);
+
+  // Filtered users based on search term
+  const filteredUsers = useMemo(() => {
+    if (!userSearchTerm.trim()) return users;
+    
+    return users.filter(user => 
+      user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.college?.toLowerCase().includes(userSearchTerm.toLowerCase())
+    );
+  }, [users, userSearchTerm]);
+
+  const DashboardStats = () => {
+    // Calculate event category distribution
+    const categories = events.reduce((acc, event) => {
+      acc[event.category] = (acc[event.category] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const categoryData = Object.entries(categories).map(([name, count]) => ({
+      name,
+      count,
+      percentage: events.length > 0 ? (count / events.length * 100).toFixed(1) : 0
+    }));
+
+    return (
+      <>
+        {/* Stats Cards */}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sm:p-6 rounded-xl">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-blue-100 text-sm">Total Events</p>
-            <p className="text-2xl sm:text-3xl font-bold">{stats.totalEvents}</p>
-            <p className="text-blue-200 text-xs">+12% vs last month</p>
+            <p className="text-2xl sm:text-3xl font-bold">{analytics.totalEvents}</p>
+            <p className="text-blue-200 text-xs">+{analytics.monthlyComparison.events.change}% vs last month</p>
           </div>
           <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-blue-200" />
         </div>
       </div>
       
-      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-xl">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-green-100 text-sm">Active Users</p>
-            <p className="text-2xl sm:text-3xl font-bold">{stats.activeUsers}</p>
-            <p className="text-green-200 text-xs">+8% vs last month</p>
+            <p className="text-2xl sm:text-3xl font-bold">{analytics.activeUsers.count}</p>
+            <p className="text-green-200 text-xs">+{analytics.activeUsers.change}% vs last month</p>
           </div>
           <Users className="w-6 h-6 sm:w-8 sm:h-8 text-green-200" />
         </div>
       </div>
       
-      <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 sm:p-6 rounded-xl">
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-purple-100 text-sm">Total Registrations</p>
-            <p className="text-2xl sm:text-3xl font-bold">{stats.totalRegistrations}</p>
-            <p className="text-purple-200 text-xs">+23% vs last month</p>
+            <p className="text-2xl sm:text-3xl font-bold">{analytics.totalRegistrations}</p>
+            <p className="text-purple-200 text-xs">+{analytics.monthlyComparison.registrations.change}% vs last month</p>
           </div>
           <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-200" />
         </div>
       </div>
       
-      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6 rounded-xl">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-orange-100 text-sm">Average Participants</p>
-            <p className="text-2xl sm:text-3xl font-bold">{stats.avgParticipants}</p>
-            <p className="text-orange-200 text-xs">+5% vs last month</p>
+            <p className="text-2xl sm:text-3xl font-bold">{analytics.averageParticipants.average}</p>
+            <p className="text-orange-200 text-xs">+{analytics.averageParticipants.change}% vs last month</p>
           </div>
           <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-orange-200" />
         </div>
       </div>
     </div>
-  );
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-stretch">
+          {/* Event Category Distribution */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex flex-col">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+              Event Distribution by Category
+            </h3>
+            <div className={`flex flex-col ${categoryData.length > 0 ? 'space-y-4' : ''} flex-1`} style={{ minHeight: '280px' }}>
+              {categoryData.length > 0 ? categoryData.map((cat, idx) => (
+                <div key={cat.name} className="group">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700 capitalize">{cat.name}</span>
+                    <span className="text-sm text-gray-500">{cat.count} events ({cat.percentage}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                      className={`h-2.5 rounded-full transition-all duration-500 ${
+                        idx % 4 === 0 ? 'bg-blue-500' :
+                        idx % 4 === 1 ? 'bg-green-500' :
+                        idx % 4 === 2 ? 'bg-purple-500' : 'bg-orange-500'
+                      }`}
+                      style={{ width: `${cat.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-sm text-gray-500 text-center">No events data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Student Registration Analytics Bar Chart */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 flex flex-col">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+              <Users className="w-5 h-5 mr-2 text-blue-600" />
+              Student Registration Analytics
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">Student participation by event category</p>
+            <div className="flex-1" style={{ minHeight: '280px' }}>
+              <Bar
+                data={{
+                  labels: Object.keys(registrationsByCategory).length > 0 
+                    ? Object.keys(registrationsByCategory).map(cat => cat.charAt(0).toUpperCase() + cat.slice(1)) 
+                    : ['No Data'],
+                  datasets: [
+                    {
+                      label: 'Student Registrations',
+                      data: Object.keys(registrationsByCategory).length > 0 
+                        ? Object.values(registrationsByCategory) 
+                        : [0],
+                      backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',   // Blue
+                        'rgba(16, 185, 129, 0.8)',   // Green
+                        'rgba(139, 92, 246, 0.8)',   // Purple
+                        'rgba(249, 115, 22, 0.8)',   // Orange
+                        'rgba(236, 72, 153, 0.8)',   // Pink
+                        'rgba(234, 179, 8, 0.8)',    // Yellow
+                      ],
+                      borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(139, 92, 246, 1)',
+                        'rgba(249, 115, 22, 1)',
+                        'rgba(236, 72, 153, 1)',
+                        'rgba(234, 179, 8, 1)',
+                      ],
+                      borderWidth: 1,
+                      borderRadius: 4,
+                      maxBarThickness: 50,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    title: {
+                      display: false,
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          return `${context.parsed.y} Students Registered`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1,
+                        font: {
+                          size: 11
+                        }
+                      },
+                      grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                      },
+                      title: {
+                        display: true,
+                        text: 'Number of Students',
+                        font: {
+                          size: 11
+                        }
+                      }
+                    },
+                    x: {
+                      ticks: {
+                        font: {
+                          size: 11
+                        }
+                      },
+                      grid: {
+                        display: false,
+                      },
+                      title: {
+                        display: true,
+                        text: 'Event Categories',
+                        font: {
+                          size: 11
+                        }
+                      },
+                      categoryPercentage: 0.7,
+                      barPercentage: 0.7
+                    }
+                  },
+                  animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart',
+                  }
+                }}
+              />
+            </div>
+            
+            {/* Quick Summary */}
+            <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-2xl font-bold text-blue-600">{Object.values(registrationsByCategory).reduce((a, b) => a + b, 0)}</p>
+                <p className="text-xs text-gray-600">Total Registrations</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">{Object.keys(registrationsByCategory).length}</p>
+                <p className="text-xs text-gray-600">Active Categories</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-purple-600">
+                  {Object.keys(registrationsByCategory).length > 0 
+                    ? Object.entries(registrationsByCategory).sort((a, b) => b[1] - a[1])[0][0].charAt(0).toUpperCase() + Object.entries(registrationsByCategory).sort((a, b) => b[1] - a[1])[0][0].slice(1)
+                    : 'N/A'}
+                </p>
+                <p className="text-xs text-gray-600">Most Popular</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
 
   const EventCard = ({ event }) => (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 p-6">
@@ -475,45 +856,111 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const SystemHealth = () => (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-        <TrendingUp className="w-5 h-5 mr-2" />
-        System Health
-      </h3>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Server Status</span>
-          <span className="flex items-center text-green-600">
-            <CheckCircle className="w-4 h-4 mr-1" />
-            {systemHealth.serverStatus}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Database</span>
-          <span className="flex items-center text-green-600">
-            <CheckCircle className="w-4 h-4 mr-1" />
-            {systemHealth.database}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">API Response</span>
-          <span className="text-sm font-medium text-gray-800">{systemHealth.apiResponse}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Uptime</span>
-          <span className="text-sm font-medium text-gray-800">{systemHealth.uptime}</span>
+  const SystemHealth = () => {
+    const getStatusColor = (status) => {
+      switch(status?.toLowerCase()) {
+        case 'healthy':
+        case 'connected':
+        case 'responsive':
+          return 'text-green-600';
+        case 'error':
+        case 'disconnected':
+        case 'slow':
+          return 'text-red-600';
+        case 'loading...':
+          return 'text-yellow-600';
+        default:
+          return 'text-gray-600';
+      }
+    };
+
+    const getStatusIcon = (status) => {
+      switch(status?.toLowerCase()) {
+        case 'healthy':
+        case 'connected':
+        case 'responsive':
+          return <CheckCircle className="w-4 h-4 mr-1" />;
+        case 'error':
+        case 'disconnected':
+        case 'slow':
+          return <XCircle className="w-4 h-4 mr-1" />;
+        case 'loading...':
+          return <Clock className="w-4 h-4 mr-1" />;
+        default:
+          return <AlertCircle className="w-4 h-4 mr-1" />;
+      }
+    };
+
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+          <TrendingUp className="w-5 h-5 mr-2" />
+          System Health
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Server Status</span>
+            <span className={`flex items-center text-sm font-medium ${getStatusColor(systemHealth.server?.status)}`}>
+              {getStatusIcon(systemHealth.server?.status)}
+              {systemHealth.server?.status || 'Loading...'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Database</span>
+            <span className={`flex items-center text-sm font-medium ${getStatusColor(systemHealth.database?.status)}`}>
+              {getStatusIcon(systemHealth.database?.status)}
+              {systemHealth.database?.status || 'Loading...'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">API Response</span>
+            <span className={`flex items-center text-sm font-medium ${getStatusColor(systemHealth.api?.status)}`}>
+              {getStatusIcon(systemHealth.api?.status)}
+              {systemHealth.api?.averageResponseTime || systemHealth.api?.status || 'Loading...'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Uptime</span>
+            <div className="text-right">
+              <span className="text-sm font-medium text-gray-800">
+                {systemHealth.uptime?.percentage || 'Loading...'}
+              </span>
+              {systemHealth.uptime?.duration && (
+                <div className="text-xs text-gray-500">
+                  {systemHealth.uptime.duration}
+                </div>
+              )}
+            </div>
+          </div>
+          {systemHealth.timestamp && (
+            <div className="pt-2 border-t border-gray-200">
+              <span className="text-xs text-gray-500">
+                Last updated: {new Date(systemHealth.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const EventDetailsModal = () => {
     if (!showEventDetails || !selectedEvent) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div 
+        className="fixed inset-0 z-50 p-4 flex items-center justify-center"
+        style={{
+          backgroundColor: 'rgba(17, 24, 39, 0.8)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)'
+        }}
+        onClick={closeEventDetails}
+      >
+        <div 
+          className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Modal Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900">{selectedEvent.title}</h2>
@@ -694,12 +1141,27 @@ const AdminDashboard = () => {
   );
 
 
-  const tabs = useMemo(() => ([
+  const tabs = useMemo(() => {
+    const baseTabs = [
     { id: 'overview', name: 'Overview', shortName: 'Overview', icon: BarChart3 },
     { id: 'user-management', name: 'User Management', shortName: 'Users', icon: Users },
     { id: 'event-management', name: 'Event Management', shortName: 'Events', icon: Calendar },
-    { id: 'registrations', name: 'Registrations', shortName: 'Registrations', icon: CheckCircle }
-  ]), []);
+      { id: 'registrations', name: 'Registrations', shortName: 'Registrations', icon: CheckCircle },
+      { id: 'logs', name: 'Activity Logs', shortName: 'Logs', icon: Activity }
+    ];
+    
+    // Add Admin Approval tab only for super admin
+    if (currentUser?.role === 'super_admin') {
+      baseTabs.splice(2, 0, { 
+        id: 'admin-approval', 
+        name: 'Admin Approval', 
+        shortName: 'Approvals', 
+        icon: Shield 
+      });
+    }
+    
+    return baseTabs;
+  }, [currentUser]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -722,16 +1184,8 @@ const AdminDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* Notification Icon */}
-              <div className="relative">
-                <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 cursor-pointer hover:text-blue-600" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-                   8
-                </span>
-              </div>
-              
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div className="hidden md:block">
@@ -825,7 +1279,7 @@ const AdminDashboard = () => {
         )}
 
         {/* Dashboard Header */}
-        {!showSettings && (
+        {!showSettings && !['user-management', 'admin-approval', 'registrations', 'logs'].includes(activeTab) && (
         <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-6 sm:mb-8">
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-7 text-gray-900 truncate">Event Organizer Dashboard</h2>
@@ -852,20 +1306,39 @@ const AdminDashboard = () => {
           <div>
             <div className="mb-6 bg-white p-6 rounded-xl shadow-sm">
               <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-800">User Management</h3>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {currentUser?.role === 'super_admin' ? 'User Management' : 'Student Management'}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {currentUser?.role === 'super_admin' 
+                      ? 'Manage all users across the system' 
+                      : `Manage students from ${currentUser?.college}`}
+                  </p>
+                </div>
                 <div className="flex gap-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
                       placeholder="Search users..."
+                      value={userSearchTerm}
+                      onChange={(e) => setUserSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                    <Filter className="w-4 h-4" />
-                    <span>Filter</span>
-                  </button>
+                  
+                  {/* Show filter only for super admin */}
+                  {currentUser?.role === 'super_admin' && (
+                    <select
+                      value={userRoleFilter}
+                      onChange={(e) => setUserRoleFilter(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      <option value="student">Students</option>
+                      <option value="college_admin">College Admins</option>
+                    </select>
+                  )}
               </div>
             </div>
           </div>
@@ -902,14 +1375,16 @@ const AdminDashboard = () => {
                         </button>
                       </td>
                     </tr>
-                  ) : users.length === 0 ? (
+                  ) : filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="px-6 py-8 text-center">
-                        <p className="text-sm text-gray-500">No users found</p>
+                        <p className="text-sm text-gray-500">
+                          {userSearchTerm ? 'No users found matching your search' : 'No users found'}
+                        </p>
                       </td>
                     </tr>
                   ) : (
-                    users.map(user => (
+                    filteredUsers.map(user => (
                       <tr key={user._id || user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -979,12 +1454,14 @@ const AdminDashboard = () => {
                     Retry
                   </button>
                 </div>
-              ) : users.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">No users found</p>
+                  <p className="text-sm text-gray-500">
+                    {userSearchTerm ? 'No users found matching your search' : 'No users found'}
+                  </p>
                 </div>
               ) : (
-                users.map(user => (
+                filteredUsers.map(user => (
                   <div key={user._id || user.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
@@ -1042,21 +1519,15 @@ const AdminDashboard = () => {
         {!showSettings && activeTab === 'event-management' && (
           <div>
             <div className="mb-6 bg-white p-6 rounded-xl shadow-sm">
-              <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search events..."
+                    value={eventSearchTerm}
+                    onChange={(e) => setEventSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                </div>
-                <div className="flex gap-2">
-                  <button className="flex items-center space-x-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                    <Filter className="w-4 h-4" />
-                    <span>Filter</span>
-                  </button>
-            </div>
           </div>
         </div>
 
@@ -1080,14 +1551,16 @@ const AdminDashboard = () => {
                         <p className="text-sm text-gray-500 mt-2">Loading events...</p>
                       </td>
                     </tr>
-                  ) : events.length === 0 ? (
+                  ) : filteredEvents.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="px-6 py-8 text-center">
-                        <p className="text-sm text-gray-500">No events found. Create your first event to get started!</p>
+                        <p className="text-sm text-gray-500">
+                          {eventSearchTerm ? 'No events found matching your search' : 'No events found. Create your first event to get started!'}
+                        </p>
                       </td>
                     </tr>
                   ) : (
-                    events.map(event => (
+                    filteredEvents.map(event => (
                       <tr key={event._id || event.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -1131,12 +1604,14 @@ const AdminDashboard = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                   <p className="text-sm text-gray-500 mt-2">Loading events...</p>
                 </div>
-              ) : events.length === 0 ? (
+              ) : filteredEvents.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">No events found. Create your first event to get started!</p>
+                  <p className="text-sm text-gray-500">
+                    {eventSearchTerm ? 'No events found matching your search' : 'No events found. Create your first event to get started!'}
+                  </p>
                 </div>
               ) : (
-                events.map(event => (
+                filteredEvents.map(event => (
                   <div key={event._id || event.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
                     <div className="flex items-start justify-between mb-3">
                       <div className="min-w-0 flex-1">
@@ -1181,15 +1656,18 @@ const AdminDashboard = () => {
 
         {/* Registrations Tab Content */}
         {!showSettings && activeTab === 'registrations' && (
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <div className="text-center py-12">
-              <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Registration Management</h3>
-              <p className="text-gray-500">Detailed registration management will be implemented in Milestone 3.</p>
-            </div>
-          </div>
+          <EventRegistrations />
         )}
 
+        {/* Activity Logs Tab Content */}
+        {!showSettings && activeTab === 'logs' && (
+          <ActivityLogs />
+        )}
+
+        {/* Admin Approval Tab Content (Super Admin Only) */}
+        {!showSettings && activeTab === 'admin-approval' && currentUser?.role === 'super_admin' && (
+          <CollegeAdminApproval />
+        )}
 
         {/* Error Message */}
         {error && (
@@ -1239,9 +1717,21 @@ const AdminDashboard = () => {
                     </button>
                   </div>
                 ) : (
-                  events.map(event => (
+                  <>
+                    {events.slice(0, 3).map(event => (
                     <EventCard key={event._id || event.id} event={event} />
-                  ))
+                    ))}
+                    {events.length > 3 && (
+                     
+                      <button
+                        onClick={() => setActiveTab('event-management')}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-md flex items-center justify-center"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View All Events ({events.length})
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -1263,7 +1753,10 @@ const AdminDashboard = () => {
                     Create New Event
                   </button>
               
-                  <button className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center">
+                  <button 
+                    onClick={() => setActiveTab('registrations')}
+                    className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center"
+                  >
                     <Eye className="w-4 h-4 mr-2" />
                     View All Registrations
                   </button>
@@ -1289,8 +1782,19 @@ const AdminDashboard = () => {
 
       {/* User Details Modal */}
       {showUserDetails && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-50 p-4 flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(17, 24, 39, 0.8)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}
+          onClick={() => setShowUserDetails(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">User Details</h2>

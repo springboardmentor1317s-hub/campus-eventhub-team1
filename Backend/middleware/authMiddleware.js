@@ -24,6 +24,19 @@ exports.protect = async (req, res, next) => {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      // Check if user is active
+      if (!user.isActive) {
+        return res.status(403).json({ error: 'Your account has been deactivated' });
+      }
+
+      // Check approval status for college admins
+      if (user.role === 'college_admin' && user.approval_status !== 'approved') {
+        return res.status(403).json({ 
+          error: 'Your admin account is pending approval',
+          approval_status: user.approval_status 
+        });
+      }
+
       // Add user to request object
       req.user = user;
       next();
