@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/authController');
-const { protect, restrictTo } = require('../middleware/authMiddleware');
+const authController = require('../controllers/authController.js');
+const { protect, restrictTo } = require('../middleware/authMiddleware.js');
 const { forgotPassword } = require("../controllers/authController.js");
 const { resetPassword } = require("../controllers/authController.js");
 
