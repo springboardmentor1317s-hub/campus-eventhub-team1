@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, MapPin, Users, CheckCircle, Clock, XCircle, Eye, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Users, CheckCircle, Clock, XCircle, Eye, ArrowRight, Download } from 'lucide-react';
+import DownloadTicketButton from './eventForm/DownloadTicket';
 
 const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
   const getStatusIcon = (status) => {
@@ -131,14 +132,65 @@ const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
                 </div>
               </div>
 
-              <button
-                onClick={() => onViewDetails(event)}
-                className="ml-6 flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 group-hover:scale-105 shadow-lg"
-              >
-                <Eye className="w-5 h-5" />
-                <span className="font-semibold">View Details</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              <div className="ml-6 flex flex-col gap-3">
+                {/* Download Ticket Button for Approved Registrations */}
+                {event.registrationStatus === 'approved' && event.registrationId && (
+                  <button
+                    onClick={() => {
+                      // Create a mini version of download button for inline use
+                      const registrationId = event.registrationId;
+                      const token = localStorage.getItem('token');
+                      
+                      if (!token) {
+                        alert('Please login to download your ticket');
+                        return;
+                      }
+
+                      // Download ticket
+                      fetch(`http://localhost:4000/api/tickets/${registrationId}`, {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                        },
+                      })
+                      .then(response => {
+                        if (!response.ok) {
+                          throw new Error('Failed to download ticket');
+                        }
+                        return response.blob();
+                      })
+                      .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `ticket-${registrationId}.pdf`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      })
+                      .catch(error => {
+                        console.error('Error downloading ticket:', error);
+                        alert('Failed to download ticket. Please try again.');
+                      });
+                    }}
+                    className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 group-hover:scale-105 shadow-lg"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span className="font-semibold">Download Ticket</span>
+                  </button>
+                )}
+                
+                {/* View Details Button */}
+                <button
+                  onClick={() => onViewDetails(event)}
+                  className="flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 group-hover:scale-105 shadow-lg"
+                >
+                  <Eye className="w-5 h-5" />
+                  <span className="font-semibold">View Details</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

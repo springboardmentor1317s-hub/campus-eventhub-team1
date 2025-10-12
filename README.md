@@ -23,10 +23,12 @@ The platform ensures **secure authentication**, **role-based access control**, a
 - 👩‍💼 **College Admin Panel** for event and user management
 - 👑 **Super Admin Dashboard** with system-wide control
 - 📊 **Registration Management** with approval workflow
+- 🎫 **QR-Based Ticket System** with automatic generation and email delivery
 - 📈 **Real-time Analytics** with interactive charts
 - 🔍 **Advanced Filtering** and search capabilities
 - 📱 **Responsive Design** across all devices
 - 📋 **Activity Logging** for audit trails
+- 📧 **Email Notifications** for approvals and password resets
 
 ---
 
@@ -45,6 +47,9 @@ The platform ensures **secure authentication**, **role-based access control**, a
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Multer](https://img.shields.io/badge/Multer-F46519?style=for-the-badge&logo=files&logoColor=white)
+![PDFKit](https://img.shields.io/badge/PDFKit-FF6B6B?style=for-the-badge&logo=pdf&logoColor=white)
+![QRCode](https://img.shields.io/badge/QRCode-000000?style=for-the-badge&logo=qrcode&logoColor=white)
+![Nodemailer](https://img.shields.io/badge/Nodemailer-22B573?style=for-the-badge&logo=mail&logoColor=white)
 
 ### Development Tools
 ![VS Code](https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)
@@ -214,6 +219,24 @@ The platform ensures **secure authentication**, **role-based access control**, a
 
 ---
 
+### 🎫 QR-Based Ticket System
+
+![Event Ticket](./docs/screenshots/event-ticket.png)
+
+*Professional PDF ticket (600×280px) with blue-themed design featuring event details on the left and scannable QR code on the right for quick verification at event entrance*
+
+
+#### Ticket System Features
+- ✅ **Automatic Generation**: Tickets created instantly upon admin approval
+- ✅ **QR Code**: Unique scannable QR code for each registration
+- ✅ **Compact Design**: Small PDF size (~50KB) perfect for mobile and email
+- ✅ **Email Delivery**: Beautiful HTML emails with ticket download links
+- ✅ **Multi-Download**: Students can re-download tickets anytime
+- ✅ **Verification API**: Admins can verify ticket authenticity via QR scan
+- ✅ **Security**: 15-minute expiration for password resets, one-time use tokens
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -269,10 +292,14 @@ The platform ensures **secure authentication**, **role-based access control**, a
 - ✅ Three-tier role-based access control
 - ✅ Event CRUD operations with image upload
 - ✅ Registration approval workflow
+- ✅ QR ticket generation and download
+- ✅ Email notifications (approval & password reset)
 - ✅ Real-time analytics and charts
 - ✅ Activity logging system
 - ✅ Super admin approval management
 - ✅ Responsive design across devices
+- ✅ PDF ticket generation with QR codes
+- ✅ Multi-location ticket download access
 
 ---
 
@@ -304,14 +331,17 @@ npm run build
 3. **View Details** → Get comprehensive event information
 4. **Register** → Submit registration (awaits admin approval)
 5. **Track Status** → Monitor your registration status (Pending/Approved/Rejected)
+6. **Download Ticket** → Get QR-coded PDF ticket after approval (from My Registrations or event details)
+7. **Email Notification** → Receive approval email with event details and ticket download link
 
 ### For College Admins 👩‍💼
 1. **Admin Login** → Access college-specific admin dashboard
 2. **View Analytics** → See registration statistics and charts
 3. **Create Events** → Add new events for your college
 4. **Manage Registrations** → Approve or reject student applications
-5. **Monitor Students** → View and manage students from your college
-6. **Activity Logs** → Track all administrative actions
+5. **Automatic Tickets** → System generates and emails tickets upon approval
+6. **Monitor Students** → View and manage students from your college
+7. **Activity Logs** → Track all administrative actions
 
 ### For Super Admin 👑
 1. **Super Admin Login** → Access system-wide dashboard with red theme
@@ -348,12 +378,16 @@ npm run build
 - **Registration management**: Dedicated tab for approval workflow
 - **User management**: Role-based user viewing and filtering
 
+
 ### 🔄 Future Enhancements
-- Real-time push notifications
+- Real-time push notifications (WebSocket integration)
 - Event feedback and rating system
-- Payment gateway integration
-- Email notifications for registration status
-- Advanced reporting and exports
+- Payment gateway integration (Razorpay/Stripe)
+- QR code scanner mobile app for event check-ins
+- Advanced reporting and data exports (PDF/Excel)
+- Event certificate generation
+- Multi-language support
+- Social media integration for event sharing
 
 ---
 
@@ -366,15 +400,20 @@ CampusEventHub successfully demonstrates a **functional, secure, and scalable** 
 - **Data-Driven Insights**: Real-time analytics for better decision making
 - **Secure Workflows**: Approval-based registration system
 - **Role-Based Control**: Three-tier access system with proper isolation
+- **Automated Ticketing**: QR-based tickets with email delivery
+- **Professional Communication**: Beautiful HTML email templates
 - **Audit Trail**: Complete activity logging for accountability
 - **Scalable Architecture**: Ready for enterprise deployment
 
 ### Key Achievements
 - ✅ **100% Role-Based Access** control implementation
+- ✅ **QR Ticket System** with automatic generation and email delivery
 - ✅ **Real-time Analytics** with Chart.js integration
+- ✅ **Email Integration** for approvals and password resets
 - ✅ **Complete CRUD** operations for all entities
 - ✅ **Responsive Design** for mobile and desktop
 - ✅ **Secure Authentication** with JWT and bcrypt
+- ✅ **PDF Generation** with professional ticket design
 
 ---
 

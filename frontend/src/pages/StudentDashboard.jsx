@@ -7,6 +7,7 @@ import StudentMyRegistrations from '../components/StudentMyRegistrations';
 import StudentUpcomingEvents from '../components/StudentUpcomingEvents';
 import StudentQuickStats from '../components/StudentQuickStats';
 import Notifications from '../components/Notifications';
+import DownloadTicketButton from '../components/eventForm/DownloadTicket';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -357,7 +358,8 @@ const StudentDashboard = () => {
                   reg.event_id.start_date.split('T')[0],
                 fee: reg.event_id.price || 0,
                 status: reg.status === 'approved' ? 'approved' : reg.status === 'pending' ? 'pending' : 'rejected',
-                registrationStatus: reg.status
+                registrationStatus: reg.status,
+                registrationId: reg._id  // Added registration ID for ticket download
               }));
               setUserEvents(registeredEvents);
             }
@@ -864,8 +866,8 @@ const StudentDashboard = () => {
               {/* Action Button */}
               <div className="flex gap-4">
                 {selectedEvent.registrationStatus ? (
-                  <div className="flex-1 text-center">
-                    <div className={`p-4 rounded-lg border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                  <div className="flex-1">
+                    <div className={`p-4 rounded-lg border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)} text-center`}>
                       <p className="font-semibold text-lg">Registration Status</p>
                       <p className="text-2xl font-bold mt-2">{selectedEvent.registrationStatus.toUpperCase()}</p>
                       {selectedEvent.registrationStatus === 'approved' && (
@@ -878,6 +880,11 @@ const StudentDashboard = () => {
                         <p className="text-sm mt-2">Unfortunately, your registration was not approved.</p>
                       )}
                     </div>
+                    
+                    {/* Download Ticket Button for Approved Registrations */}
+                    {selectedEvent.registrationStatus === 'approved' && selectedEvent.registrationId && (
+                      <DownloadTicketButton registrationId={selectedEvent.registrationId} />
+                    )}
                   </div>
                 ) : (
                   <button
