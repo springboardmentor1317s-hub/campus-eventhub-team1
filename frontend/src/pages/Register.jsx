@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const COLLEGE_SUGGESTIONS = [
-  "Indian Institute of Technology, Bombay",
+  "IIT Bombay",
   "Indian Institute of Technology, Delhi",
   "Indian Institute of Technology, Madras",
   "National Institute of Technology, Trichy",

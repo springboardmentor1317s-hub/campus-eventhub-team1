@@ -335,7 +335,7 @@ export const EventCreationForm = () => {
     'Institute of Technology and Science (ITS), Ghaziabad',
     'Azad Institute of Engineering and Technology, Lucknow',
     'Maharana Pratap Engineering College, Kanpur',
-    'Sam Higginbottom University of Agriculture, Prayagraj',
+    'IIT Bombay',
     'Other'
   ];
 
