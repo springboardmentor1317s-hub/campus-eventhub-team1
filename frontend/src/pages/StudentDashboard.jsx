@@ -336,31 +336,33 @@ const StudentDashboard = () => {
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data.registrations) {
-              // Extract events from registrations
-              const registeredEvents = data.data.registrations.map(reg => ({
-                id: reg.event_id._id,
-                title: reg.event_id.title,
-                college: reg.event_id.college_name,
-                category: reg.event_id.category,
-                date: reg.event_id.start_date.split('T')[0],
-                time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                }),
-                location: reg.event_id.location,
-                participants: reg.event_id.current_registrations || 0,
-                maxParticipants: reg.event_id.registration_limit,
-                image: reg.event_id.image ? `http://localhost:4000${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
-                description: reg.event_id.description,
-                tags: reg.event_id.tags || [],
-                registrationDeadline: reg.event_id.registration_deadline ? 
-                  reg.event_id.registration_deadline.split('T')[0] : 
-                  reg.event_id.start_date.split('T')[0],
-                fee: reg.event_id.price || 0,
-                status: reg.status === 'approved' ? 'approved' : reg.status === 'pending' ? 'pending' : 'rejected',
-                registrationStatus: reg.status,
-                registrationId: reg._id  // Added registration ID for ticket download
-              }));
+              // Filter out registrations with null event_id and extract events from registrations
+              const registeredEvents = data.data.registrations
+                .filter(reg => reg.event_id !== null && reg.event_id !== undefined)
+                .map(reg => ({
+                  id: reg.event_id._id,
+                  title: reg.event_id.title,
+                  college: reg.event_id.college_name,
+                  category: reg.event_id.category,
+                  date: reg.event_id.start_date.split('T')[0],
+                  time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  }),
+                  location: reg.event_id.location,
+                  participants: reg.event_id.current_registrations || 0,
+                  maxParticipants: reg.event_id.registration_limit,
+                  image: reg.event_id.image ? `http://localhost:4000${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
+                  description: reg.event_id.description,
+                  tags: reg.event_id.tags || [],
+                  registrationDeadline: reg.event_id.registration_deadline ? 
+                    reg.event_id.registration_deadline.split('T')[0] : 
+                    reg.event_id.start_date.split('T')[0],
+                  fee: reg.event_id.price || 0,
+                  status: reg.status === 'approved' ? 'approved' : reg.status === 'pending' ? 'pending' : 'rejected',
+                  registrationStatus: reg.status,
+                  registrationId: reg._id  // Added registration ID for ticket download
+                }));
               setUserEvents(registeredEvents);
             }
           }
