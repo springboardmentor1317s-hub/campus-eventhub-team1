@@ -231,6 +231,7 @@ exports.updateRegistrationStatus = async (req, res) => {
     registration.status = status;
     await registration.save();
 
+<<<<<<< HEAD
     if (oldStatus !== status && status === 'approved') {
   try {
     await sendTicketEmail(registration);
@@ -239,6 +240,8 @@ exports.updateRegistrationStatus = async (req, res) => {
   }
 }
 
+=======
+>>>>>>> origin/main
     // Log this activity
     const ActivityLog = require('../models/ActivityLog');
     await ActivityLog.create({
@@ -284,6 +287,45 @@ exports.updateRegistrationStatus = async (req, res) => {
       // Continue even if notification fails
     }
 
+<<<<<<< HEAD
+=======
+    // Send email with ticket for approved registrations
+    if (status === 'approved') {
+      try {
+        const { sendTicketApprovalEmail } = require('../utils/emailService');
+        const emailResult = await sendTicketApprovalEmail(
+          registration.user_id,
+          registration.event_id,
+          registration
+        );
+        
+        if (!emailResult.success) {
+          console.log('Ticket approval email not sent:', emailResult.message || emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('Failed to send ticket approval email:', emailError);
+        // Continue even if email fails
+      }
+    } else if (status === 'rejected') {
+      // Send rejection email
+      try {
+        const { sendRejectionEmail } = require('../utils/emailService');
+        const emailResult = await sendRejectionEmail(
+          registration.user_id,
+          registration.event_id,
+          req.body.reason || ''
+        );
+        
+        if (emailResult.success) {
+          console.log('Rejection email sent successfully');
+        }
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+        // Continue even if email fails
+      }
+    }
+
+>>>>>>> origin/main
     res.status(200).json({
       success: true,
       message: `Registration ${status} successfully`,

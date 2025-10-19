@@ -1,153 +1,127 @@
-import axios from "axios";
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { Download, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 const DownloadTicketButton = ({ registrationId }) => {
-  const [loading, setLoading] = useState(false);
-  const [ticketData, setTicketData] = useState(null); // holds QR, student, event info
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-  const handleDownload = async () => {
-    setLoading(true);
+  const handleDownloadTicket = async () => {
     try {
-      const token = localStorage.getItem("token");
+      setDownloading(true);
+      setError(null);
+      setSuccess(false);
 
-      // Fetch PDF
-      const response = await axios.get(
-        `http://localhost:5173/api/registrations/ticket/${registrationId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
-        }
-      );
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('Please login to download your ticket');
+        return;
+      }
 
-      // Download PDF
-      const fileURL = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = fileURL;
-      link.setAttribute("download", `ticket_${registrationId}.pdf`);
+      // Make API request to download ticket
+      const response = await fetch(`http://localhost:4000/api/tickets/${registrationId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to download ticket');
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ticket-${registrationId}.pdf`;
+      
+      // Trigger download
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      // Fetch ticket details (QR code + student + event) from backend
-      const ticketResponse = await axios.get(
-        `http://localhost:5173/api/registrations/ticket/details/${registrationId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
 
-      setTicketData(ticketResponse.data);
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error("Ticket download failed:", error);
-      alert("Error downloading ticket. Please try again.");
+    } catch (err) {
+      console.error('Error downloading ticket:', err);
+      setError(err.message || 'Failed to download ticket. Please try again.');
     } finally {
-      setLoading(false);
+      setDownloading(false);
     }
   };
 
-  const closeModal = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setIsClosing(false);
-      setTicketData(null);
-    }, 300);
-  };
-
   return (
-    <>
+    <div className="w-full mt-4">
       <button
-        onClick={handleDownload}
-        disabled={loading || !registrationId}
-        className={`px-9 py-4 text-xs rounded-lg transition-colors mt-6 ${
-          loading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-        }`}
-        aria-label="Download ticket PDF"
+        onClick={handleDownloadTicket}
+        disabled={downloading}
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
-        {loading ? "Downloading..." : "Download Ticket"}
+        {downloading ? (
+          <>
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <span>Generating Ticket...</span>
+          </>
+        ) : success ? (
+          <>
+            <CheckCircle className="w-5 h-5" />
+            <span>Downloaded Successfully!</span>
+          </>
+        ) : (
+          <>
+            <Download className="w-5 h-5" />
+            <span>Download Your Ticket</span>
+          </>
+        )}
       </button>
 
-      {/* Ticket Details Modal */}
-      {isModalOpen && ticketData && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50
-                      transition-opacity duration-300 ease-in-out ${
-                        isClosing ? "opacity-0" : "opacity-100"
-                      }`}
-        >
-          <div
-            className={`bg-white rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center
-                        transform transition-transform duration-300 ease-in-out ${
-                          isClosing ? "scale-95" : "scale-100"
-                        }`}
-          >
-            <h2 className="text-xl font-bold mb-4">Ticket Details</h2>
-
-            {/* QR Code */}
-            {ticketData.qrCode && (
-              <img
-                src={ticketData.qrCode}
-                alt="Ticket QR"
-                className="mb-4 w-48 h-48"
-              />
-            )}
-
-            {/* Student Details */}
-            {ticketData.student && (
-              <div className="mb-4 w-full text-left">
-                <h3 className="font-semibold text-lg mb-2">Student Details</h3>
-                <p>
-                  <span className="font-medium">Name:</span>{" "}
-                  {ticketData.student.name}
-                </p>
-                <p>
-                  <span className="font-medium">Email:</span>{" "}
-                  {ticketData.student.email}
-                </p>
-                <p>
-                  <span className="font-medium">ID:</span>{" "}
-                  {ticketData.student.id}
-                </p>
-              </div>
-            )}
-
-            {/* Event Details */}
-            {ticketData.event && (
-              <div className="mb-4 w-full text-left">
-                <h3 className="font-semibold text-lg mb-2">Event Details</h3>
-                <p>
-                  <span className="font-medium">Title:</span>{" "}
-                  {ticketData.event.title}
-                </p>
-                <p>
-                  <span className="font-medium">Date:</span>{" "}
-                  {ticketData.event.date}
-                </p>
-                <p>
-                  <span className="font-medium">Location:</span>{" "}
-                  {ticketData.event.location}
-                </p>
-                <p>
-                  <span className="font-medium">Registration ID:</span>{" "}
-                  {registrationId}
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={closeModal}
-              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
-            >
-              Close
-            </button>
+      {error && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-red-800 font-medium">Error</p>
+            <p className="text-sm text-red-600">{error}</p>
           </div>
         </div>
       )}
-    </>
+
+      {success && (
+        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-green-800 font-medium">Success!</p>
+            <p className="text-sm text-green-600">Your ticket has been downloaded. Check your downloads folder.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start gap-2">
+          <FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-blue-900 mb-1">Ticket Information</p>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Your ticket includes a QR code for event check-in</li>
+              <li>• Present this ticket (digital or printed) at the event entrance</li>
+              <li>• You can download your ticket multiple times if needed</li>
+              <li>• Keep your registration ID safe for reference</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default DownloadTicketButton;
+
