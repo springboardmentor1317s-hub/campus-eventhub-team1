@@ -231,17 +231,6 @@ exports.updateRegistrationStatus = async (req, res) => {
     registration.status = status;
     await registration.save();
 
-<<<<<<< HEAD
-    if (oldStatus !== status && status === 'approved') {
-  try {
-    await sendTicketEmail(registration);
-  } catch (err) {
-    console.error('Error sending ticket email:', err);
-  }
-}
-
-=======
->>>>>>> origin/main
     // Log this activity
     const ActivityLog = require('../models/ActivityLog');
     await ActivityLog.create({
@@ -287,8 +276,6 @@ exports.updateRegistrationStatus = async (req, res) => {
       // Continue even if notification fails
     }
 
-<<<<<<< HEAD
-=======
     // Send email with ticket for approved registrations
     if (status === 'approved') {
       try {
@@ -325,7 +312,6 @@ exports.updateRegistrationStatus = async (req, res) => {
       }
     }
 
->>>>>>> origin/main
     res.status(200).json({
       success: true,
       message: `Registration ${status} successfully`,

@@ -6,6 +6,7 @@ import ProfileSettings from '../components/ProfileSettings';
 import EventRegistrations from '../components/EventRegistrations';
 import ActivityLogs from '../components/ActivityLogs';
 import CollegeAdminApproval from '../components/CollegeAdminApproval';
+import AdminFeedbackManager from '../components/AdminFeedbackManager';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -734,11 +735,7 @@ const AdminDashboard = () => {
                     y: {
                       beginAtZero: true,
                       ticks: {
-<<<<<<< HEAD
-                        stepSize: 1,
-=======
                         precision: 0, // Ensure whole numbers only
->>>>>>> origin/main
                         font: {
                           size: 11
                         }
@@ -1151,6 +1148,7 @@ const AdminDashboard = () => {
     { id: 'user-management', name: 'User Management', shortName: 'Users', icon: Users },
     { id: 'event-management', name: 'Event Management', shortName: 'Events', icon: Calendar },
       { id: 'registrations', name: 'Registrations', shortName: 'Registrations', icon: CheckCircle },
+      { id: 'feedback', name: 'Feedback & Ratings', shortName: 'Feedback', icon: MessageSquare },
       { id: 'logs', name: 'Activity Logs', shortName: 'Logs', icon: Activity }
     ];
     
@@ -1668,6 +1666,13 @@ const AdminDashboard = () => {
           <ActivityLogs />
         )}
 
+        {/* Feedback & Ratings Tab Content - ADD THIS SECTION */}
+        {!showSettings && activeTab === 'feedback' && (
+           <div>
+           <AdminFeedbackManager />
+           </div>
+        )}
+
         {/* Admin Approval Tab Content (Super Admin Only) */}
         {!showSettings && activeTab === 'admin-approval' && currentUser?.role === 'super_admin' && (
           <CollegeAdminApproval />
@@ -1765,6 +1770,11 @@ const AdminDashboard = () => {
                     View All Registrations
                   </button>
                   <button className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center">
+                     
+                  <button onClick={() => setActiveTab('feedback')}
+                  className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center">
+                  </button>
+                  
                     <MessageSquare className="w-4 h-4 mr-2" />
                     View Feedback
                   </button>

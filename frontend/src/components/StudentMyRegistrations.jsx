@@ -1,10 +1,6 @@
 import React from 'react';
-<<<<<<< HEAD
-import { Calendar, MapPin, Users, CheckCircle, Clock, XCircle, Eye, ArrowRight } from 'lucide-react';
-=======
 import { Calendar, MapPin, Users, CheckCircle, Clock, XCircle, Eye, ArrowRight, Download } from 'lucide-react';
 import DownloadTicketButton from './eventForm/DownloadTicket';
->>>>>>> origin/main
 
 const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
   const getStatusIcon = (status) => {
@@ -136,16 +132,6 @@ const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
                 </div>
               </div>
 
-<<<<<<< HEAD
-              <button
-                onClick={() => onViewDetails(event)}
-                className="ml-6 flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 group-hover:scale-105 shadow-lg"
-              >
-                <Eye className="w-5 h-5" />
-                <span className="font-semibold">View Details</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-=======
               <div className="ml-6 flex flex-col gap-3">
                 {/* Download Ticket Button for Approved Registrations */}
                 {event.registrationStatus === 'approved' && event.registrationId && (
@@ -205,7 +191,6 @@ const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
->>>>>>> origin/main
             </div>
           </div>
         ))}
