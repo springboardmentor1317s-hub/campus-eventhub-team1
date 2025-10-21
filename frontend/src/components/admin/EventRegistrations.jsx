@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, XCircle, Clock, Users, RefreshCw } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 const EventRegistrations = () => {
   const [registrations, setRegistrations] = useState([]);
@@ -28,7 +29,7 @@ const EventRegistrations = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/events', {
+      const response = await fetch(`${API_BASE_URL}/events`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -49,7 +50,7 @@ const EventRegistrations = () => {
   const fetchRegistrations = async (eventId) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:4000/api/events/${eventId}/registrations`, {
+      const response = await fetch(`${API_BASE_URL}/events/${eventId}/registrations`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -76,7 +77,7 @@ const EventRegistrations = () => {
   const fetchAllRegistrations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:4000/api/events/all/registrations', {
+      const response = await fetch(`${API_BASE_URL}/events/all/registrations`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -92,7 +93,7 @@ const EventRegistrations = () => {
         // If the endpoint doesn't exist yet, fetch from each event individually
         const allRegs = [];
         for (const event of events) {
-          const res = await fetch(`http://localhost:4000/api/events/${event._id}/registrations`, {
+          const res = await fetch(`${API_BASE_URL}/events/${event._id}/registrations`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -122,7 +123,7 @@ const EventRegistrations = () => {
   const handleStatusUpdate = async (registrationId, newStatus) => {
     try {
       setUpdateLoading(registrationId);
-      const response = await fetch(`http://localhost:4000/api/events/registrations/${registrationId}`, {
+      const response = await fetch(`${API_BASE_URL}/events/registrations/${registrationId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

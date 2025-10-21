@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calendar, MapPin, Users, CheckCircle, Clock, XCircle, Eye, ArrowRight, Download } from 'lucide-react';
-import DownloadTicketButton from './eventForm/DownloadTicket';
+import DownloadTicketButton from '../event-actions/DownloadTicket';
+import { API_BASE_URL } from '../../config/api';
 
 const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
+  // Pagination state
+  const [registrationPage, setRegistrationPage] = useState(1);
+  const REGISTRATIONS_PER_PAGE = 7;
+
+  // Paginate registrations
+  const paginatedRegistrations = useMemo(() => {
+    const startIndex = 0;
+    const endIndex = registrationPage * REGISTRATIONS_PER_PAGE;
+    return registrations.slice(startIndex, endIndex);
+  }, [registrations, registrationPage]);
   const getStatusIcon = (status) => {
     switch(status) {
       case 'approved': return <CheckCircle className="w-5 h-5 text-green-600" />;
@@ -83,7 +94,7 @@ const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
 
       {/* Enhanced Registrations List */}
       <div className="space-y-6">
-        {registrations.map((event) => (
+        {paginatedRegistrations.map((event) => (
           <div
             key={event.id}
             className={`bg-white rounded-2xl shadow-lg border-2 ${getStatusColor(event.registrationStatus)} p-8 hover:shadow-xl transition-all duration-300 group`}
@@ -147,7 +158,7 @@ const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
                       }
 
                       // Download ticket
-                      fetch(`http://localhost:4000/api/tickets/${registrationId}`, {
+                      fetch(`${API_BASE_URL}/tickets/${registrationId}`, {
                         method: 'GET',
                         headers: {
                           'Authorization': `Bearer ${token}`,
@@ -195,6 +206,30 @@ const StudentMyRegistrations = ({ registrations, onViewDetails }) => {
           </div>
         ))}
       </div>
+
+      {/* Load More Button for Registrations */}
+      {paginatedRegistrations.length < registrations.length && (
+        <div className="text-center py-8">
+          <button
+            onClick={() => setRegistrationPage(prev => prev + 1)}
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Load More Registrations ({registrations.length - paginatedRegistrations.length} remaining)
+          </button>
+        </div>
+      )}
+
+      {/* Reset button when all registrations loaded */}
+      {paginatedRegistrations.length === registrations.length && registrations.length > REGISTRATIONS_PER_PAGE && (
+        <div className="text-center py-6">
+          <button
+            onClick={() => setRegistrationPage(1)}
+            className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+          >
+            Show Less Registrations
+          </button>
+        </div>
+      )}
     </div>
   );
 };

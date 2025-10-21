@@ -52,6 +52,7 @@ exports.sendTicketApprovalEmail = async (user, event, registration) => {
 
     const ticketDownloadLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/student-dashboard`;
 
+
     const mailOptions = {
       from: `"CampusEventHub" <${process.env.EMAIL_USER}>`,
       to: user.email,
