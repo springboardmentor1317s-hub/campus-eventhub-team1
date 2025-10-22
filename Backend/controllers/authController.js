@@ -303,5 +303,6 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     console.error("Reset password error:", err);
     res.status(500).json({ error: "Server error" });
+
   }
 };
