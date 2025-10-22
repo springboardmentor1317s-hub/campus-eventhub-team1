@@ -113,6 +113,35 @@ exports.createEvent = async (req, res) => {
       .populate('created_by', 'name email college role')
       .populate('college_id', 'name college');
 
+    // Log this activity
+    try {
+      const ActivityLog = require('../models/ActivityLog');
+      await ActivityLog.create({
+        user_id: req.user.id,
+        action: 'event_created',
+        description: `Created event "${title}"`,
+        details: {
+          event_id: event._id,
+          event_title: title,
+          category: category,
+          start_date: startDate,
+          registration_limit: parseInt(registration_limit)
+        }
+      });
+    } catch (logError) {
+      console.error('Error creating activity log:', logError);
+      // Don't fail the request if logging fails
+    }
+
+    // Send notifications to all students about the new event
+    try {
+      const { notifyStudentsAboutNewEvent } = require('./notificationController');
+      await notifyStudentsAboutNewEvent(event);
+    } catch (notifError) {
+      console.error('Failed to send notifications:', notifError);
+      // Continue even if notification fails
+    }
+
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
@@ -369,7 +398,30 @@ exports.deleteEvent = async (req, res) => {
       deleteUploadedFile(imagePath);
     }
 
+    // Store event details before deletion for logging
+    const eventTitle = event.title;
+    const eventId = event._id;
+
     await Event.findByIdAndDelete(req.params.id);
+
+    // Log this activity
+    try {
+      const ActivityLog = require('../models/ActivityLog');
+      await ActivityLog.create({
+        user_id: req.user.id,
+        action: 'event_deleted',
+        description: `Deleted event "${eventTitle}"`,
+        details: {
+          event_id: eventId,
+          event_title: eventTitle,
+          had_registrations: event.current_registrations > 0,
+          registration_count: event.current_registrations
+        }
+      });
+    } catch (logError) {
+      console.error('Error creating activity log:', logError);
+      // Don't fail the request if logging fails
+    }
 
     res.status(200).json({
       success: true,

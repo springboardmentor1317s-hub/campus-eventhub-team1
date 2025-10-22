@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 const COLLEGE_SUGGESTIONS = [
-  "Indian Institute of Technology, Bombay",
+  "IIT Bombay",
   "Indian Institute of Technology, Delhi",
   "Indian Institute of Technology, Madras",
   "National Institute of Technology, Trichy",
@@ -97,7 +98,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:4000/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

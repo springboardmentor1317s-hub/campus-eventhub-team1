@@ -157,30 +157,33 @@ router.get('/uploads/:filename', (req, res) => {
 
 // Registration routes
 
-// Update registration status (admin only)
-router.patch('/registrations/:registrationId', 
-  protect, 
-  restrictTo('college_admin', 'super_admin'),
-  registrationController.updateRegistrationStatus
-);
-
-// Get all registrations
-router.get(
-  '/registrations',
-  protect,
-  restrictTo('college_admin', 'super_admin'),
-  registrationController.getAllRegistrations
-);
-
-// Get all registrations for current user
-router.get('/user/registrations', protect, registrationController.getUserRegistrations);
-
 // Get registration status for current user
 router.get('/:eventId/registration/status', protect, registrationController.getRegistrationStatus);
 
 // Register for an event
 router.post('/:eventId/register', protect, registrationController.registerForEvent);
 
+// Get all registrations for current user
+router.get('/user/registrations', protect, registrationController.getUserRegistrations);
 
+// Get all registrations across all events (admin only) - MUST be before /:eventId/registrations
+router.get('/all/registrations', 
+  protect, 
+  restrictTo('college_admin', 'super_admin'),
+  registrationController.getAllRegistrations
+);
+
+// Get all registrations for an event (admin only)
+router.get('/:eventId/registrations', 
+  protect,
+  registrationController.getEventRegistrations
+);
+
+// Update registration status (admin only)
+router.patch('/registrations/:registrationId', 
+  protect, 
+  restrictTo('college_admin', 'super_admin'),
+  registrationController.updateRegistrationStatus
+);
 
 module.exports = router;

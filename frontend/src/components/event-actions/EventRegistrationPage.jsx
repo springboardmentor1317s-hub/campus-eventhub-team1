@@ -6,6 +6,8 @@ import {
   Share2, Bookmark
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import ReviewSection from '../ReviewSection';
+import { API_BASE_URL } from '../../config/api';
 
 // Toast Notification Component
 const Toast = ({ message, type, onClose }) => {
@@ -130,10 +132,19 @@ export const EventRegistrationPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [toast, setToast] = useState(null);
-  const API_BASE_URL = 'http://localhost:4000/api';
-  const ASSETS_BASE_URL = 'http://localhost:4000';
+  const ASSETS_BASE_URL = API_BASE_URL.replace('/api', '');
 
   useEffect(() => {
+    // Check for payment status from URL query params
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('payment_success')) {
+      setToast({ message: "Payment successful! Your registration is now pending approval.", type: 'success' });
+      setRegistrationStatus('pending');
+    }
+    if (query.get('payment_cancelled')) {
+      setToast({ message: "Payment was cancelled. You can try again.", type: 'error' });
+    }
+
     fetchEventDetails();
     if (currentUser?.id) {
       checkRegistrationStatus();
@@ -211,6 +222,12 @@ export const EventRegistrationPage = () => {
       const data = await response.json();
       
       if (response.ok && data.success) {
+        // If paid event, redirect to Stripe Checkout
+        if (data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+          return;
+        }
+        // Free event flow
         setRegistrationStatus('pending');
         setShowModal(false);
         setToast({ message: 'Registration submitted successfully!', type: 'success' });
@@ -525,6 +542,19 @@ export const EventRegistrationPage = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Full Reviews Section */}
+        <div className="mt-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-3"></div>
+            What Students Are Saying
+          </h2>
+          <ReviewSection 
+            eventId={eventId} 
+            currentUserId={currentUser?.id}
+            showForm={true}
+          />
         </div>
       </div>
 

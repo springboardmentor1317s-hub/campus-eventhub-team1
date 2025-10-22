@@ -7,8 +7,18 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const activityLogRoutes = require('./routes/activityLogRoutes');
+const userRoutes = require('./routes/userRoutes');
+const systemHealthRoutes = require('./routes/systemHealthRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const app = express();
+
+// Stripe webhook needs raw body
+app.use('/api/registrations/stripe-webhook', express.raw({type: 'application/json'}), require('./controllers/registrationController').handleStripeWebhook);
 
 // Middleware
 app.use(cors());
@@ -27,6 +37,13 @@ startDb();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/logs', activityLogRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/system', systemHealthRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
