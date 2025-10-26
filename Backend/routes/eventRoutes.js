@@ -159,9 +159,16 @@ router.get('/uploads/:filename', (req, res) => {
 
 // Get registration status for current user
 router.get('/:eventId/registration/status', protect, registrationController.getRegistrationStatus);
+// Make sure this route exists and is in the correct position
+router.post('/verify-payment-registration', 
+  protect,
+  registrationController.verifyPaymentAndCreateRegistration
+);
 
 // Register for an event
 router.post('/:eventId/register', protect, registrationController.registerForEvent);
+
+
 
 // Get all registrations for current user
 router.get('/user/registrations', protect, registrationController.getUserRegistrations);
@@ -185,5 +192,7 @@ router.patch('/registrations/:registrationId',
   restrictTo('college_admin', 'super_admin'),
   registrationController.updateRegistrationStatus
 );
+
+
 
 module.exports = router;

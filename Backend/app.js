@@ -17,9 +17,6 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const app = express();
 
-// Stripe webhook needs raw body
-app.use('/api/registrations/stripe-webhook', express.raw({type: 'application/json'}), require('./controllers/registrationController').handleStripeWebhook);
-
 // Middleware
 app.use(cors());
 app.use(express.json());

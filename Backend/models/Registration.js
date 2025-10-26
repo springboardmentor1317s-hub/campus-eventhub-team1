@@ -16,6 +16,10 @@ const registrationSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
+  stripe_payment_id: {
+    type: String,
+    sparse: true // Allows multiple null values
+  },
   timestamp: {
     type: Date,
     default: Date.now

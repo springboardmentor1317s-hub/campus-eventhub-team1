@@ -138,11 +138,27 @@ export const EventRegistrationPage = () => {
     // Check for payment status from URL query params
     const query = new URLSearchParams(window.location.search);
     if (query.get('payment_success')) {
-      setToast({ message: "Payment successful! Your registration is now pending approval.", type: 'success' });
-      setRegistrationStatus('pending');
+      const sessionId = query.get('session_id');
+      
+      if (sessionId) {
+        setToast({ message: "Payment successful! Verifying registration...", type: 'success' });
+        
+        // Clean up URL first
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Verify payment and create/update registration
+        verifyPaymentRegistration(sessionId);
+      } else {
+        setToast({ message: "Payment completed but verification failed. Please contact support.", type: 'error' });
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
+
     if (query.get('payment_cancelled')) {
       setToast({ message: "Payment was cancelled. You can try again.", type: 'error' });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     fetchEventDetails();
@@ -186,7 +202,8 @@ export const EventRegistrationPage = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setRegistrationStatus(data.data.status || 'not_registered');
+          const status = data.data.status || 'not_registered';
+          setRegistrationStatus(status);
         }
       }
     } catch (error) {
@@ -239,6 +256,54 @@ export const EventRegistrationPage = () => {
       setToast({ message: error.message || 'Registration failed. Please try again.', type: 'error' });
     } finally {
       setIsRegistering(false);
+    }
+  };
+
+  const verifyPaymentRegistration = async (sessionId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setToast({ message: "Please log in to complete registration.", type: 'error' });
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/events/verify-payment-registration`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ sessionId })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setRegistrationStatus('pending');
+          setToast({ 
+            message: "Payment successful! Your registration is now pending admin approval.", 
+            type: 'success' 
+          });
+          
+          // Force refresh the registration status after a short delay
+          setTimeout(() => {
+            checkRegistrationStatus();
+          }, 1000);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Payment verification failed:', errorData);
+        setToast({ 
+          message: "Payment verification failed. Please contact support.", 
+          type: 'error' 
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying payment registration:', error);
+      setToast({ 
+        message: "Error verifying payment. Please contact support.", 
+        type: 'error' 
+      });
     }
   };
 
@@ -331,7 +396,24 @@ export const EventRegistrationPage = () => {
 
             {/* Back Button */}
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // Check if user is logged in and determine their role
+                if (currentUser) {
+                  if (currentUser.role === 'student') {
+                    // Navigate to student dashboard with browse tab active
+                    navigate('/student/dashboard', { state: { activeTab: 'browse' } });
+                  } else if (currentUser.role === 'college_admin' || currentUser.role === 'super_admin') {
+                    // Navigate to admin dashboard
+                    navigate('/admin/dashboard');
+                  } else {
+                    // Fallback to previous page
+                    navigate(-1);
+                  }
+                } else {
+                  // For non-logged in users, go to login page
+                  navigate('/login');
+                }
+              }}
               className="flex items-center text-gray-600 hover:text-gray-900 font-medium transition-colors px-4 py-2 rounded-lg hover:bg-gray-100"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />

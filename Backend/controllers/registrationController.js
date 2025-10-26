@@ -1,8 +1,21 @@
 const Registration = require('../models/Registration');
 const Event = require('../models/Event');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15', // Specify a fixed API version
-});
+const path = require('path');
+
+// Initialize Stripe with better error handling
+let stripe = null;
+try {
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15',
+    });
+    console.log('Stripe initialized successfully');
+  } else {
+    console.warn('STRIPE_SECRET_KEY not found in environment variables');
+  }
+} catch (error) {
+  console.error('Failed to initialize Stripe:', error.message);
+}
 
 // Register for an event
 exports.registerForEvent = async (req, res) => {
@@ -10,9 +23,15 @@ exports.registerForEvent = async (req, res) => {
     const eventId = req.params.eventId;
     const userId = req.user.id;
 
+    // Validate eventId format
+    if (!eventId || eventId.length !== 24) {
+      return res.status(400).json({ error: 'Invalid event ID format' });
+    }
+
     // Check if event exists
     const event = await Event.findById(eventId);
     if (!event) {
+      console.log('Event not found:', eventId);
       return res.status(404).json({ error: 'Event not found' });
     }
 
@@ -40,15 +59,21 @@ exports.registerForEvent = async (req, res) => {
 
     // Handle payment for paid events
     if (event.price > 0) {
+      if (!stripe) {
+        return res.status(500).json({ 
+          error: 'Payment processing is temporarily unavailable. Please try again later or contact administrator.' 
+        });
+      }
+
       try {
-        if (!process.env.STRIPE_SECRET_KEY) {
-          console.error('Missing STRIPE_SECRET_KEY');
-          return res.status(500).json({ error: 'Payment is not configured.' });
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:5173';
+        
+        // Validate required data for Stripe session
+        if (!event.title || !event._id) {
+          throw new Error('Event data incomplete for payment processing');
         }
 
-        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-        const session = await stripe.checkout.sessions.create({
+        const sessionData = {
           payment_method_types: ['card'],
           mode: 'payment',
           line_items: [{
@@ -56,94 +81,201 @@ exports.registerForEvent = async (req, res) => {
               currency: 'inr',
               product_data: {
                 name: event.title,
-                description: `Registration for ${event.title}`,
+                description: `Registration for ${event.title} at ${event.college_name || 'Campus Event'}`,
+                images: event.image ? [`${frontendBase}/api/events/uploads/${path.basename(event.image)}`] : []
               },
-              unit_amount: Math.round(event.price * 100), // integer paise
+              unit_amount: Math.round(event.price * 100), // Convert to paise (smallest currency unit)
             },
             quantity: 1,
           }],
           metadata: {
             eventId: event._id.toString(),
-            userId: req.user.id,
+            userId: userId,
+            eventTitle: event.title,
+            userEmail: req.user.email || 'N/A'
           },
-          success_url: `${frontendBase}/event-register/${eventId}?payment_success=true`,
+          customer_email: req.user.email,
+          success_url: `${frontendBase}/event-register/${eventId}?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${frontendBase}/event-register/${eventId}?payment_cancelled=true`,
-        });
+          expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes
+        };
+
+        const session = await stripe.checkout.sessions.create(sessionData);
 
         return res.status(200).json({
           success: true,
-          paymentUrl: session.url
+          paymentUrl: session.url,
+          sessionId: session.id,
+          amount: session.amount_total / 100, // Convert back to rupees for display
+          currency: session.currency
         });
 
       } catch (stripeError) {
         console.error('Stripe session creation error:', {
           type: stripeError.type,
-          code: stripeError.code,
-          message: stripeError.message,
-          raw: stripeError.raw
+          message: stripeError.message
         });
-        return res.status(500).json({ error: 'Failed to create payment session.' });
+
+        // Return more specific error messages based on Stripe error type
+        let errorMessage = 'Failed to create payment session.';
+        
+        if (stripeError.type === 'StripeInvalidRequestError') {
+          if (stripeError.param) {
+            errorMessage = `Invalid payment parameter: ${stripeError.param}. Please contact support.`;
+          } else {
+            errorMessage = 'Invalid payment request. Please contact support.';
+          }
+        } else if (stripeError.type === 'StripeAPIError') {
+          errorMessage = 'Payment service temporarily unavailable. Please try again.';
+        } else if (stripeError.type === 'StripeConnectionError') {
+          errorMessage = 'Network error. Please check your connection.';
+        } else if (stripeError.type === 'StripeAuthenticationError') {
+          errorMessage = 'Payment authentication failed. Please contact administrator.';
+        } else if (stripeError.type === 'StripeRateLimitError') {
+          errorMessage = 'Too many requests. Please try again later.';
+        }
+
+        return res.status(500).json({ 
+          error: errorMessage,
+          details: process.env.NODE_ENV === 'development' ? {
+            type: stripeError.type,
+            message: stripeError.message,
+            param: stripeError.param
+          } : undefined
+        });
       }
     }
 
     // Create new registration with pending status for free events
-    const registration = await Registration.create({
-      event_id: eventId,
-      user_id: userId,
-      status: 'pending'
-    });
+    try {
+      const registration = await Registration.create({
+        event_id: eventId,
+        user_id: userId,
+        status: 'pending'
+      });
 
-    res.status(201).json({
-      success: true,
-      message: 'Registration successful. Awaiting approval.',
-      data: { registration }
-    });
+      res.status(201).json({
+        success: true,
+        message: 'Registration successful. Awaiting approval.',
+        data: { registration }
+      });
+
+    } catch (dbError) {
+      console.error('Database error creating registration:', dbError);
+      throw new Error('Failed to create registration record');
+    }
 
   } catch (error) {
     console.error('Registration error:', error);
-    if (error.code === 11000) { // Duplicate key error
+    
+    if (error.code === 11000) { // MongoDB duplicate key error
       return res.status(400).json({ error: 'You are already registered for this event' });
     }
-    res.status(500).json({ error: 'Failed to register for event' });
+    
+    res.status(500).json({ 
+      error: error.message || 'Failed to register for event',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
-exports.handleStripeWebhook = async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Add this to your .env
-
-  let event;
-
+// Update the verification function
+exports.verifyPaymentAndCreateRegistration = async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error(`Webhook signature verification failed.`, err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    const { sessionId } = req.body;
+    const userId = req.user.id;
 
-  // Handle the event
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const { eventId, userId } = session.metadata;
+    if (!sessionId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Session ID is required' 
+      });
+    }
 
-    try {
-      // Check if registration already exists to prevent duplicates
-      const existingRegistration = await Registration.findOne({ event_id: eventId, user_id: userId });
-      if (!existingRegistration) {
-        await Registration.create({
+    if (!stripe) {
+      console.error('Stripe not initialized');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Payment service not configured' 
+      });
+    }
+
+    // Retrieve the session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Payment not completed',
+        payment_status: session.payment_status 
+      });
+    }
+
+    const { eventId } = session.metadata;
+
+    if (!eventId) {
+      console.error('Event ID not found in session metadata:', session.metadata);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Event ID not found in session metadata' 
+      });
+    }
+
+    // Check if event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Event not found' 
+      });
+    }
+
+    // Check if registration already exists
+    let registration = await Registration.findOne({ 
+      event_id: eventId, 
+      user_id: userId 
+    });
+
+    if (!registration) {
+      // Create new registration with pending status
+      registration = await Registration.create({
+        event_id: eventId,
+        user_id: userId,
+        status: 'pending',
+        stripe_payment_id: session.payment_intent || session.id,
+      });
+
+    } else {
+      // Update existing registration
+      registration.status = 'pending';
+      registration.stripe_payment_id = session.payment_intent || session.id;
+      await registration.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment verified and registration created successfully',
+      data: { 
+        registration: {
+          _id: registration._id,
+          status: registration.status,
           event_id: eventId,
           user_id: userId,
-          status: 'pending', // Still requires admin approval
-          stripe_payment_id: session.payment_intent,
-        });
-        console.log(`Registration created for user ${userId} for event ${eventId}`);
+          payment_verified: true
+        }
       }
-    } catch (err) {
-      console.error('Error creating registration after payment:', err);
-    }
-  }
+    });
 
-  res.json({ received: true });
+  } catch (error) {
+    console.error('Error verifying payment and creating registration:', error);
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to verify payment',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 };
 
 // Get registration status for an event
@@ -155,12 +287,23 @@ exports.getRegistrationStatus = async (req, res) => {
     const registration = await Registration.findOne({
       event_id: eventId,
       user_id: userId
-    });
+    }).populate('event_id', 'title');
+
+    if (!registration) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          status: 'not_registered'
+        }
+      });
+    }
 
     res.status(200).json({
       success: true,
       data: {
-        status: registration ? registration.status : 'not_registered'
+        status: registration.status,
+        registrationId: registration._id,
+        eventTitle: registration.event_id?.title
       }
     });
 
