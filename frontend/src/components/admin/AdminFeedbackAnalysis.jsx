@@ -270,12 +270,24 @@ const AdminFeedbackAnalysis = () => {
   };
 
   const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString('en-US', {
-      month: 'short',
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    // Mobile-friendly relative time for recent dates
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    // For older dates, use compact format
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
       day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     });
   };
 
@@ -492,9 +504,9 @@ const AdminFeedbackAnalysis = () => {
                                   {feedback.user_id?.college || ''}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                                <Calendar size={14} />
-                                <span>{formatTimestamp(feedback.timestamp)}</span>
+                              <div className="flex items-center gap-2 mt-1 text-xs sm:text-sm text-gray-600">
+                                <Calendar size={12} className="sm:w-[14px] sm:h-[14px] flex-shrink-0" />
+                                <span className="truncate">{formatTimestamp(feedback.timestamp)}</span>
                               </div>
                             </div>
                             
@@ -579,7 +591,7 @@ const AdminFeedbackAnalysis = () => {
                                               You
                                             </span>
                                           )}
-                                          <span className="text-xs text-gray-500">
+                                          <span className="text-xs text-gray-500 truncate">
                                             {formatTimestamp(reply.timestamp)}
                                           </span>
                                         </div>

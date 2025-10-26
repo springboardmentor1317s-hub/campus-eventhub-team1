@@ -458,6 +458,8 @@ const StudentDashboard = () => {
             userEvents={userEvents} 
             onViewDetails={handleViewDetails}
             onBrowseEvents={() => setActiveTab('browse')}
+            currentUser={currentUser}
+            handleRegister={handleRegister}
           />
         )}
       </main>
@@ -474,93 +476,126 @@ const StudentDashboard = () => {
           onClick={closeEventDetails}
         >
           <div 
-            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-full h-[90vh] overflow-y-auto animate-fade-in mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="relative">
+            {/* Modal Header - Enhanced for full width */}
+            <div className="relative h-80 lg:h-96">
               <img 
                 src={selectedEvent.image} 
                 alt={selectedEvent.title}
-                className="w-full h-64 object-cover rounded-t-xl"
+                className="w-full h-full object-cover rounded-t-xl"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-t-xl"></div>
+              
+              {/* Close button */}
               <button
                 onClick={closeEventDetails}
-                className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
+                className="absolute top-6 right-6 p-3 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-lg"
               >
                 <X className="w-6 h-6 text-gray-800" />
               </button>
+              
+              {/* Registration status badge */}
               {selectedEvent.registrationStatus && (
-                <div className={`absolute top-4 left-4 px-4 py-2 rounded-full font-semibold text-sm backdrop-blur-sm border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                <div className={`absolute top-6 left-6 px-6 py-3 rounded-full font-bold text-lg backdrop-blur-sm border-2 shadow-lg ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
                   {selectedEvent.registrationStatus.toUpperCase()}
                 </div>
               )}
+
+              {/* Event title overlay */}
+              <div className="absolute bottom-6 left-6 right-6">
+                <h2 className="text-4xl lg:text-5xl font-bold text-white mb-2 leading-tight">
+                  {selectedEvent.title}
+                </h2>
+                <p className="text-xl text-gray-200 font-medium">
+                  {selectedEvent.college}
+                </p>
+              </div>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">{selectedEvent.title}</h2>
-              
-              {/* Event Info Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-4">
-                  <div className="flex items-center text-gray-700">
-                    <Calendar className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Date & Time</p>
-                      <p className="font-semibold">{new Date(selectedEvent.date).toLocaleDateString('en-US', { 
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })} at {selectedEvent.time}</p>
-                    </div>
+            {/* Modal Content - Better spacing for full width */}
+            <div className="p-8 lg:p-12">
+              {/* Event Info Grid - Optimized for full width */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                  <div className="flex items-center text-blue-600 mb-3">
+                    <Calendar className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Date & Time</p>
                   </div>
-                  
-                  <div className="flex items-center text-gray-700">
-                    <MapPin className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Location</p>
-                      <p className="font-semibold">{selectedEvent.location}</p>
-                      <p className="text-sm">{selectedEvent.college}</p>
-                    </div>
-                  </div>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {new Date(selectedEvent.date).toLocaleDateString('en-US', { 
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-gray-600 font-medium">{selectedEvent.time}</p>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center text-gray-700">
-                    <Users className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Participants</p>
-                      <p className="font-semibold">{selectedEvent.participants} / {selectedEvent.maxParticipants} registered</p>
-                    </div>
+                <div className="bg-green-50 p-6 rounded-2xl border border-green-100">
+                  <div className="flex items-center text-green-600 mb-3">
+                    <MapPin className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Location</p>
                   </div>
-                  
-                  <div className="flex items-center text-gray-700">
-                    <Trophy className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Category</p>
-                      <p className="font-semibold capitalize">{selectedEvent.category}</p>
-                    </div>
+                  <p className="font-bold text-gray-900 text-lg">{selectedEvent.location}</p>
+                  <p className="text-gray-600 font-medium">{selectedEvent.college}</p>
+                </div>
+                
+                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
+                  <div className="flex items-center text-purple-600 mb-3">
+                    <Users className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Participants</p>
                   </div>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {selectedEvent.participants}/{selectedEvent.maxParticipants}
+                  </p>
+                  <p className="text-gray-600 font-medium">Registered</p>
+                </div>
+                
+                <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                  <div className="flex items-center text-orange-600 mb-3">
+                    <Trophy className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Fee</p>
+                  </div>
+                  <p className="font-bold text-green-600 text-2xl">₹{selectedEvent.fee}</p>
+                  <p className="text-gray-600 font-medium">Registration</p>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">About This Event</h3>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {selectedEvent.description || 'No description available for this event.'}
-                </p>
+              {/* Category Section */}
+              <div className="bg-gray-50 p-6 rounded-2xl mb-8">
+                <div className="flex items-center text-gray-700 mb-3">
+                  <Trophy className="w-6 h-6 mr-3 text-blue-600" />
+                  <p className="text-sm font-semibold uppercase tracking-wide text-gray-600">Category</p>
+                </div>
+                <p className="font-bold text-gray-900 text-xl capitalize">{selectedEvent.category}</p>
+              </div>
+
+              {/* Description - Full width with better typography */}
+              <div className="mb-10">
+                <h3 className="text-3xl font-bold text-gray-900 mb-6 flex items-center">
+                  <div className="w-2 h-8 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full mr-4"></div>
+                  About This Event
+                </h3>
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    {selectedEvent.description || 'No description available for this event.'}
+                  </p>
+                </div>
               </div>
 
               {/* Tags */}
               {selectedEvent.tags && selectedEvent.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
+                <div className="mb-10">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <div className="w-2 h-6 bg-gradient-to-b from-green-600 to-blue-600 rounded-full mr-4"></div>
+                    Tags
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
                     {selectedEvent.tags.map((tag, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                      <span key={index} className="px-6 py-3 bg-blue-100 text-blue-800 text-lg font-medium rounded-full border border-blue-200">
                         {tag}
                       </span>
                     ))}
@@ -568,58 +603,70 @@ const StudentDashboard = () => {
                 </div>
               )}
 
-              {/* Fee */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-6">
-                <span className="text-gray-700 font-medium">Registration Fee</span>
-                <span className="text-2xl font-bold text-green-600">₹{selectedEvent.fee}</span>
-              </div>
-
-              {/* Action Button */}
-              <div className="flex gap-4 mb-8">
-                {selectedEvent.registrationStatus ? (
-                  <div className="flex-1">
-                    <div className={`p-4 rounded-lg border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)} text-center`}>
-                      <p className="font-semibold text-lg">Registration Status</p>
-                      <p className="text-2xl font-bold mt-2">{selectedEvent.registrationStatus.toUpperCase()}</p>
-                      {selectedEvent.registrationStatus === 'approved' && (
-                        <p className="text-sm mt-2">You're all set! See you at the event.</p>
-                      )}
-                      {selectedEvent.registrationStatus === 'pending' && (
-                        <p className="text-sm mt-2">Your registration is awaiting admin approval.</p>
-                      )}
-                      {selectedEvent.registrationStatus === 'rejected' && (
-                        <p className="text-sm mt-2">Unfortunately, your registration was not approved.</p>
+              {/* Action Buttons - Better aligned for full width */}
+              <div className="bg-gray-50 p-8 rounded-2xl mb-10">
+                <div className="max-w-4xl mx-auto">
+                  {selectedEvent.registrationStatus ? (
+                    <div className="flex flex-col lg:flex-row gap-6 items-center">
+                      <div className="flex-1 w-full lg:w-auto">
+                        <div className={`p-8 rounded-2xl font-bold text-2xl text-center border-2 shadow-lg ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                          <div className="flex items-center justify-center gap-3">
+                            {selectedEvent.registrationStatus === 'approved' && <CheckCircle className="w-8 h-8" />}
+                            {selectedEvent.registrationStatus === 'pending' && <Clock className="w-8 h-8" />}
+                            {selectedEvent.registrationStatus === 'rejected' && <X className="w-8 h-8" />}
+                            <span>Registration {selectedEvent.registrationStatus.toUpperCase()}</span>
+                          </div>
+                          <p className="text-lg font-medium mt-2">
+                            {selectedEvent.registrationStatus === 'approved' && "You're all set for this event!"}
+                            {selectedEvent.registrationStatus === 'pending' && "Your registration is awaiting admin approval."}
+                            {selectedEvent.registrationStatus === 'rejected' && "Unfortunately, your registration was not approved."}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedEvent.registrationStatus === 'approved' && selectedEvent.registrationId && (
+                        <div className="w-full lg:w-auto">
+                          <DownloadTicketButton registrationId={selectedEvent.registrationId} />
+                        </div>
                       )}
                     </div>
-                    
-                    {/* Download Ticket Button for Approved Registrations */}
-                    {selectedEvent.registrationStatus === 'approved' && selectedEvent.registrationId && (
-                      <DownloadTicketButton registrationId={selectedEvent.registrationId} />
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      closeEventDetails();
-                      handleRegister(selectedEvent.id);
-                    }}
-                    disabled={selectedEvent.participants >= selectedEvent.maxParticipants}
-                    className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-colors ${
-                      selectedEvent.participants >= selectedEvent.maxParticipants
-                        ? 'bg-red-100 text-red-700 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {selectedEvent.participants >= selectedEvent.maxParticipants ? 'Event Full' : 'Register Now'}
-                  </button>
-                )}
+                  ) : (
+                    <div className="text-center">
+                      <button
+                        onClick={() => {
+                          closeEventDetails();
+                          handleRegister(selectedEvent.id);
+                        }}
+                        disabled={selectedEvent.participants >= selectedEvent.maxParticipants}
+                        className={`px-12 py-6 rounded-2xl font-bold text-2xl transition-all transform hover:scale-105 shadow-lg ${
+                          selectedEvent.participants >= selectedEvent.maxParticipants
+                            ? 'bg-red-100 text-red-700 cursor-not-allowed border-2 border-red-300'
+                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-xl'
+                        }`}
+                      >
+                        {selectedEvent.participants >= selectedEvent.maxParticipants ? 
+                          'Event Full - Registration Closed' : 
+                          'Register for This Event'
+                        }
+                      </button>
+                      {selectedEvent.participants < selectedEvent.maxParticipants && (
+                        <p className="text-gray-600 mt-4 text-lg">
+                          Join {selectedEvent.participants} other participants
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Divider */}
-              <div className="border-t border-gray-200 mb-8"></div>
+              <div className="border-t-2 border-gray-200 mb-10"></div>
 
-              {/* Reviews Section */}
-              <div>
+              {/* Reviews Section - Full width with better spacing */}
+              <div className="w-full">
+                <h3 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
+                  <div className="w-2 h-8 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full mr-4"></div>
+                  Event Reviews & Ratings
+                </h3>
                 <ReviewSection 
                   eventId={selectedEvent.id} 
                   currentUserId={currentUser?.id}

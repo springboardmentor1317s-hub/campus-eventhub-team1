@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import StudentMyRegistrations from './StudentMyRegistrations';
 
-const MyRegistrations = ({ userEvents, onViewDetails, onBrowseEvents }) => {
+const MyRegistrations = ({ userEvents, onViewDetails, onBrowseEvents, currentUser, handleRegister }) => {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registrations</h2>
@@ -10,6 +10,9 @@ const MyRegistrations = ({ userEvents, onViewDetails, onBrowseEvents }) => {
         <StudentMyRegistrations 
           registrations={userEvents} 
           onViewDetails={onViewDetails}
+          userEvents={userEvents}
+          currentUser={currentUser}
+          handleRegister={handleRegister}
         />
       ) : (
         <div className="text-center py-12">
