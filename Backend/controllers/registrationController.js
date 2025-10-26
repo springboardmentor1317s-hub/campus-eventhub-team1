@@ -234,19 +234,59 @@ exports.getAllRegistrations = async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    const registrations = await Registration.find()
-      .populate('user_id', 'name email college')
-      .populate('event_id', 'title category college_name')
-      .sort({ timestamp: -1 });
+    let registrations;
+
+    if (req.user.role === 'college_admin') {
+      // College admin: only get registrations for events they created
+      registrations = await Registration.find()
+        .populate({
+          path: 'user_id', 
+          select: 'name email college'
+        })
+        .populate({
+          path: 'event_id', 
+          select: 'title category college_name created_by',
+          populate: {
+            path: 'created_by',
+            select: 'name email'
+          },
+          match: { created_by: req.user.id } // Filter events by creator
+        })
+        .sort({ timestamp: -1 });
+
+      // Filter out registrations where event_id is null (due to match filter)
+      registrations = registrations.filter(reg => reg.event_id !== null);
+    } else {
+      // Super admin: get all registrations
+      registrations = await Registration.find()
+        .populate({
+          path: 'user_id', 
+          select: 'name email college'
+        })
+        .populate({
+          path: 'event_id', 
+          select: 'title category college_name created_by',
+          populate: {
+            path: 'created_by',
+            select: 'name email'
+          }
+        })
+        .sort({ timestamp: -1 });
+    }
 
     // Filter out registrations where user has been deleted
-    const validRegistrations = registrations.filter(reg => reg.user_id !== null);
+    const validRegistrations = registrations.filter(reg => 
+      reg.user_id !== null && reg.event_id !== null
+    );
 
     // Format the data to include event information
     const formattedRegistrations = validRegistrations.map(reg => ({
       _id: reg._id,
       user_id: reg.user_id,
-      event_id: reg.event_id,
+      event_id: {
+        ...reg.event_id.toObject(),
+        created_by: reg.event_id.created_by
+      },
       eventTitle: reg.event_id?.title,
       eventType: reg.event_id?.category,
       status: reg.status,

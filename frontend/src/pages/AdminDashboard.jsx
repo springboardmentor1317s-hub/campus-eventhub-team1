@@ -121,16 +121,18 @@ const AdminDashboard = () => {
       const data = await response.json();
       
       if (data.success) {
+        let filteredEvents;
         // Super admin sees ALL events, college admin sees only their events
         if (currentUser?.role === 'super_admin') {
-          setEvents(data.data.events); // Show all events
+          filteredEvents = data.data.events; // Show all events
         } else {
-          // Filter events by current user (college admin)
-        const adminEvents = data.data.events.filter(event => 
-          event.created_by && event.created_by._id === currentUser?.id
-        );
-        setEvents(adminEvents);
+          // Filter events by current user (college admin) - only events they created
+          filteredEvents = data.data.events.filter(event => 
+            event.created_by && event.created_by._id === currentUser?.id
+          );
         }
+        setEvents(filteredEvents);
+        return filteredEvents; // Return the events for chaining
       } else {
         throw new Error('Failed to fetch events');
       }
@@ -138,12 +140,13 @@ const AdminDashboard = () => {
       console.error('Error fetching admin events:', error);
       setError('Failed to fetch events. Please try again.');
       setEvents([]);
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch admin statistics
+  // Update fetchAdminStats to fetch role-specific stats
   const fetchAdminStats = async () => {
     try {
       const token = getAuthToken();
@@ -162,12 +165,30 @@ const AdminDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setStats({
-            totalEvents: data.data.overview.total_events || 0,
-            activeUsers: data.data.overview.active_events || 0, // Using active events as proxy
-            totalRegistrations: data.data.overview.total_registrations || 0,
-            avgParticipants: Math.round(data.data.overview.total_registrations / Math.max(data.data.overview.total_events, 1)) || 0
-          });
+          // For college admin, stats should reflect only their events
+          // For super admin, stats show global data
+          const statsData = data.data.overview;
+          
+          if (currentUser?.role === 'college_admin') {
+            // Filter stats based on current user's events only
+            const userEvents = events; // This is already filtered for college admin
+            const userRegistrations = statsData.total_registrations || 0; // Backend should filter this
+            
+            setStats({
+              totalEvents: userEvents.length,
+              activeUsers: statsData.active_events || 0,
+              totalRegistrations: userRegistrations,
+              avgParticipants: userEvents.length > 0 ? Math.round(userRegistrations / userEvents.length) : 0
+            });
+          } else {
+            // Super admin gets global stats
+            setStats({
+              totalEvents: statsData.total_events || 0,
+              activeUsers: statsData.active_events || 0,
+              totalRegistrations: statsData.total_registrations || 0,
+              avgParticipants: Math.round(statsData.total_registrations / Math.max(statsData.total_events, 1)) || 0
+            });
+          }
         }
       }
     } catch (error) {
@@ -192,6 +213,7 @@ const AdminDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
+          console.log('Analytics data received:', data.data);
           setAnalytics(data.data);
         }
       }
@@ -257,13 +279,23 @@ const AdminDashboard = () => {
         const data = await response.json();
         console.log('Registration Analytics Data:', data);
         if (data.success && data.data.registrations) {
-          // Aggregate registrations by event category (all statuses)
+          // Aggregate registrations by event category
           const categoryMap = {};
           
           data.data.registrations.forEach(registration => {
-            if (registration.event_id && registration.event_id.category) {
-              const category = registration.event_id.category;
-              // Count all registrations regardless of status
+            let category = registration.event_id && registration.event_id.category
+              ? registration.event_id.category
+              : 'Uncategorized';
+            // For college admin, only count registrations for their events
+            if (currentUser?.role === 'college_admin') {
+              // Check if this registration is for an event created by the current admin
+              // Use the event's created_by field instead of comparing with local events array
+              if (registration.event_id.created_by && 
+                  registration.event_id.created_by._id === currentUser?.id) {
+                categoryMap[category] = (categoryMap[category] || 0) + 1;
+              }
+            } else {
+              // Super admin sees all registrations
               categoryMap[category] = (categoryMap[category] || 0) + 1;
             }
           });
@@ -504,12 +536,18 @@ const AdminDashboard = () => {
   // Load data when component mounts or currentUser changes
   useEffect(() => {
     if (currentUser?.id) {
-      fetchAdminEvents();
-      fetchAdminStats();
-      fetchRegistrationAnalytics();
-      fetchSystemHealth();
-      fetchAnalytics();
-      fetchFeedbackAnalytics();
+      const loadData = async () => {
+        // First load events
+        await fetchAdminEvents();
+        // Then fetch analytics and stats that are now role-specific
+        await fetchAnalytics();
+        fetchAdminStats();
+        fetchRegistrationAnalytics();
+        fetchSystemHealth();
+        fetchFeedbackAnalytics();
+      };
+      
+      loadData();
     }
   }, [currentUser]);
 
@@ -642,6 +680,9 @@ const AdminDashboard = () => {
       percentage: events.length > 0 ? (count / events.length * 100).toFixed(1) : 0
     }));
 
+    // Calculate total registrations from the same data source as chart
+    const totalRegistrationsFromChart = Object.values(registrationsByCategory).reduce((a, b) => a + b, 0);
+
     return (
       <>
         {/* Stats Cards */}
@@ -672,7 +713,8 @@ const AdminDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-purple-100 text-sm">Total Registrations</p>
-            <p className="text-2xl sm:text-3xl font-bold">{analytics.totalRegistrations}</p>
+            {/* Use the same data source as chart */}
+            <p className="text-2xl sm:text-3xl font-bold">{totalRegistrationsFromChart}</p>
             <p className="text-purple-200 text-xs">+{analytics.monthlyComparison.registrations.change}% vs last month</p>
           </div>
           <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-200" />
@@ -835,7 +877,8 @@ const AdminDashboard = () => {
             {/* Quick Summary */}
             <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-2 text-center">
               <div>
-                <p className="text-2xl font-bold text-blue-600">{Object.values(registrationsByCategory).reduce((a, b) => a + b, 0)}</p>
+                {/* Use the same calculation as the stats card */}
+                <p className="text-2xl font-bold text-blue-600">{totalRegistrationsFromChart}</p>
                 <p className="text-xs text-gray-600">Total Registrations</p>
               </div>
               <div>
