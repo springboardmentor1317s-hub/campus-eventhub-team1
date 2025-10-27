@@ -418,12 +418,14 @@ npm run build
 
 
 ### 🔄 Future Enhancements
-- Real-time push notifications (WebSocket integration)
-- QR code scanner mobile app for event check-ins
-- Advanced reporting and data exports (PDF/Excel)
-- Event certificate generation
-- Multi-language support
-- Social media integration for event sharing
+- **Real-time push notifications** (WebSocket integration for instant updates)
+- **QR code scanner mobile app** for event check-ins and attendance tracking
+- **Event certificate generation** with customizable templates and automatic distribution
+- **Multi-language support** for international college participation
+- **Social media integration** for event sharing and promotion
+- **Video streaming integration** for hybrid events and virtual participation
+- **AI-powered event recommendations** based on student preferences and history
+- **Automated event reminders** via SMS and push notifications
 
 ---
 
