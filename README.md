@@ -27,6 +27,7 @@ The platform ensures **secure authentication**, **role-based access control**, a
 - 🎫 **QR-Based Ticket System** with automatic generation and email delivery
 - 📈 **Real-time Analytics** with interactive charts
 - ⭐ **Feedback & Rating System** with detailed comments and analytics
+- 📋 **Excel Data Export** with comprehensive registration details and ticket information
 - 🔍 **Advanced Filtering** and search capabilities
 - 📱 **Responsive Design** across all devices
 - 📋 **Activity Logging** for audit trails
@@ -53,6 +54,7 @@ The platform ensures **secure authentication**, **role-based access control**, a
 ![QRCode](https://img.shields.io/badge/QRCode-000000?style=for-the-badge&logo=qrcode&logoColor=white)
 ![Nodemailer](https://img.shields.io/badge/Nodemailer-22B573?style=for-the-badge&logo=mail&logoColor=white)
 ![Stripe](https://img.shields.io/badge/Stripe-008C45?style=for-the-badge&logo=stripe&logoColor=white)
+![XLSX](https://img.shields.io/badge/XLSX-217346?style=for-the-badge&logo=microsoftexcel&logoColor=white)
 
 ### Development Tools
 ![VS Code](https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)
@@ -319,6 +321,8 @@ The platform ensures **secure authentication**, **role-based access control**, a
 - ✅ Responsive design across devices
 - ✅ PDF ticket generation with QR codes
 - ✅ Multi-location ticket download access
+- ✅ Excel export functionality with comprehensive registration data
+- ✅ Role-based data export permissions
 
 ---
 
@@ -360,10 +364,11 @@ npm run build
 2. **View Analytics** → See registration statistics and charts
 3. **Create Events** → Add new events for your college
 4. **Manage Registrations** → Approve or reject student applications
-5. **Automatic Tickets** → System generates and emails tickets upon approval
-6. **Monitor Students** → View and manage students from your college
-7. **Activity Logs** → Track all administrative actions
-8. **Feedback Analysis** → Review student ratings and comments for event improvement
+5. **Excel Data Export** → Download comprehensive registration data with ticket information
+6. **Automatic Tickets** → System generates and emails tickets upon approval
+7. **Monitor Students** → View and manage students from your college
+8. **Activity Logs** → Track all administrative actions
+9. **Feedback Analysis** → Review student ratings and comments for event improvement
 
 ### For Super Admin 👑
 1. **Super Admin Login** → Access system-wide dashboard with red theme
@@ -399,6 +404,7 @@ npm run build
 - **Data isolation**: College admins see only their college data
 - **Registration management**: Dedicated tab for approval workflow
 - **User management**: Role-based user viewing and filtering
+- **Excel data export**: Comprehensive registration data export with ticket information
 
 ### ✅ Milestone 4: Feedback & Interaction System
 - **Star rating system**: Five-star rating with visual indicators
@@ -445,7 +451,9 @@ CampusEventHub successfully demonstrates a **functional, secure, and scalable** 
 - ✅ **Responsive Design** for mobile and desktop
 - ✅ **Secure Authentication** with JWT and bcrypt
 - ✅ **PDF Generation** with professional ticket design
-r
+- ✅ **Excel Export System** with comprehensive registration analytics and ticket data
+- ✅ **Data Export Security** with role-based access control for sensitive information
+
 ---
 
 ## 🤝 Contributing

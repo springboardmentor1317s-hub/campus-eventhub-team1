@@ -193,6 +193,11 @@ router.patch('/registrations/:registrationId',
   registrationController.updateRegistrationStatus
 );
 
-
+// Export registrations to Excel (admin only)
+router.get('/export/registrations/excel', 
+  protect, 
+  restrictTo('college_admin', 'super_admin'),
+  registrationController.exportRegistrationsToExcel
+);
 
 module.exports = router;
