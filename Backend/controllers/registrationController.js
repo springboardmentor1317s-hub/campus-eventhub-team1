@@ -1,10 +1,5 @@
 const Registration = require('../models/Registration');
 const Event = require('../models/Event');
-const QRCode = require('qrcode');
-const PDFDocument = require('pdfkit');
-const nodemailer = require('nodemailer');
-const User = require('../models/User');
-const transporter = require('../mailer');
 
 // Register for an event
 exports.registerForEvent = async (req, res) => {
@@ -40,8 +35,55 @@ exports.registerForEvent = async (req, res) => {
       });
     }
 
-    // Create new registration with pending status
-    // NOTE: Don't increment count yet - only approved registrations count toward capacity
+    // Handle payment for paid events
+    if (event.price > 0) {
+      try {
+        if (!process.env.STRIPE_SECRET_KEY) {
+          console.error('Missing STRIPE_SECRET_KEY');
+          return res.status(500).json({ error: 'Payment is not configured.' });
+        }
+
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          mode: 'payment',
+          line_items: [{
+            price_data: {
+              currency: 'inr',
+              product_data: {
+                name: event.title,
+                description: `Registration for ${event.title}`,
+              },
+              unit_amount: Math.round(event.price * 100), // integer paise
+            },
+            quantity: 1,
+          }],
+          metadata: {
+            eventId: event._id.toString(),
+            userId: req.user.id,
+          },
+          success_url: `${frontendBase}/event-register/${eventId}?payment_success=true`,
+          cancel_url: `${frontendBase}/event-register/${eventId}?payment_cancelled=true`,
+        });
+
+        return res.status(200).json({
+          success: true,
+          paymentUrl: session.url
+        });
+
+      } catch (stripeError) {
+        console.error('Stripe session creation error:', {
+          type: stripeError.type,
+          code: stripeError.code,
+          message: stripeError.message,
+          raw: stripeError.raw
+        });
+        return res.status(500).json({ error: 'Failed to create payment session.' });
+      }
+    }
+
+    // Create new registration with pending status for free events
     const registration = await Registration.create({
       event_id: eventId,
       user_id: userId,
@@ -61,6 +103,44 @@ exports.registerForEvent = async (req, res) => {
     }
     res.status(500).json({ error: 'Failed to register for event' });
   }
+};
+
+exports.handleStripeWebhook = async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Add this to your .env
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error(`Webhook signature verification failed.`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const { eventId, userId } = session.metadata;
+
+    try {
+      // Check if registration already exists to prevent duplicates
+      const existingRegistration = await Registration.findOne({ event_id: eventId, user_id: userId });
+      if (!existingRegistration) {
+        await Registration.create({
+          event_id: eventId,
+          user_id: userId,
+          status: 'pending', // Still requires admin approval
+          stripe_payment_id: session.payment_intent,
+        });
+        console.log(`Registration created for user ${userId} for event ${eventId}`);
+      }
+    } catch (err) {
+      console.error('Error creating registration after payment:', err);
+    }
+  }
+
+  res.json({ received: true });
 };
 
 // Get registration status for an event
@@ -129,9 +209,12 @@ exports.getEventRegistrations = async (req, res) => {
       .populate('user_id', 'name email college')
       .sort({ timestamp: -1 });
 
+    // Filter out registrations where user has been deleted
+    const validRegistrations = registrations.filter(reg => reg.user_id !== null);
+
     res.status(200).json({
       success: true,
-      data: { registrations }
+      data: { registrations: validRegistrations }
     });
 
   } catch (error) {
@@ -153,8 +236,11 @@ exports.getAllRegistrations = async (req, res) => {
       .populate('event_id', 'title category college_name')
       .sort({ timestamp: -1 });
 
+    // Filter out registrations where user has been deleted
+    const validRegistrations = registrations.filter(reg => reg.user_id !== null);
+
     // Format the data to include event information
-    const formattedRegistrations = registrations.map(reg => ({
+    const formattedRegistrations = validRegistrations.map(reg => ({
       _id: reg._id,
       user_id: reg.user_id,
       event_id: reg.event_id,

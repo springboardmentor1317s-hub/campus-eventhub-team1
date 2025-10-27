@@ -1,10 +1,10 @@
-import express from "express";
-import {
+const express = require('express');
+const {
   getRatings,
   createRating,
   deleteRating,
   getRatingStats,
-} from "../controllers/ratingController.js";
+} = require("../controllers/ratingController.js");
 
 const router = express.Router();
 
@@ -13,4 +13,4 @@ router.post("/", createRating);
 router.delete("/:id", deleteRating);
 router.get("/stats", getRatingStats);
 
-export default router;
+module.exports = router;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Download, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 const DownloadTicketButton = ({ registrationId }) => {
   const [downloading, setDownloading] = useState(false);
@@ -20,7 +21,7 @@ const DownloadTicketButton = ({ registrationId }) => {
       }
 
       // Make API request to download ticket
-      const response = await fetch(`http://localhost:4000/api/tickets/${registrationId}`, {
+      const response = await fetch(`${API_BASE_URL}/tickets/${registrationId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

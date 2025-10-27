@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, XCircle, Clock, Users, Shield, RefreshCw, Building } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
+
 
 const CollegeAdminApproval = () => {
   const [admins, setAdmins] = useState([]);
@@ -17,7 +19,7 @@ const CollegeAdminApproval = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:4000/api/users?role=college_admin', {
+      const response = await fetch(`${API_BASE_URL}/users?role=college_admin`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -42,7 +44,7 @@ const CollegeAdminApproval = () => {
   const handleStatusUpdate = async (userId, newStatus) => {
     try {
       setUpdateLoading(userId);
-      const response = await fetch(`http://localhost:4000/api/users/${userId}/approval`, {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/approval`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

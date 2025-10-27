@@ -14,7 +14,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['event_created', 'registration_approved', 'registration_rejected', 'event_updated', 'event_cancelled'],
+    enum: ['event_created', 'registration_approved', 'registration_rejected', 'event_updated', 'event_cancelled', 'review_reply', 'admin_reply'],
     required: true
   },
   related_event: {
@@ -25,6 +25,16 @@ const notificationSchema = new mongoose.Schema({
   related_registration: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Registration',
+    default: null
+  },
+  related_feedback: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Feedback',
+    default: null
+  },
+  replied_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     default: null
   },
   read: {

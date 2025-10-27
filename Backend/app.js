@@ -7,9 +7,17 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const feedbackRoutes = require('./routes/feedbackRoutes'); // ✅ feedback route
+const activityLogRoutes = require('./routes/activityLogRoutes');
+const userRoutes = require('./routes/userRoutes');
+const systemHealthRoutes = require('./routes/systemHealthRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 
 const app = express();
+
+// Stripe webhook needs raw body
+app.use('/api/registrations/stripe-webhook', express.raw({type: 'application/json'}), require('./controllers/registrationController').handleStripeWebhook);
 
 // ✅ Allow frontend (Vite on port 5173)
 app.use(
@@ -36,9 +44,14 @@ startDb();
 // ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/feedback', feedbackRoutes); // feedback endpoints
+app.use('/api/logs', activityLogRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/system', systemHealthRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/tickets', ticketRoutes);
 
-// ✅ Root route
+// Basic route
 app.get('/', (req, res) => {
   res.send('Welcome to the CampusEventHub API');
 });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertCircle, ArrowLeft, Lock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 const ProfileSettings = ({ currentUser, logout, token, onBack }) => {
     const { updateUserProfile } = useAuth();
@@ -23,7 +24,7 @@ const ProfileSettings = ({ currentUser, logout, token, onBack }) => {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:4000/api/auth/profile', {
+            const response = await fetch(`${API_BASE_URL}/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ const ProfileSettings = ({ currentUser, logout, token, onBack }) => {
         }
 
         try {
-            const response = await fetch('http://localhost:4000/api/auth/change-password', {
+            const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

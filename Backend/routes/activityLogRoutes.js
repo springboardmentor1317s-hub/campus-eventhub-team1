@@ -19,5 +19,12 @@ router.get('/stats',
   activityLogController.getLogStats
 );
 
+// Clear activity logs (super admin only)
+router.delete('/clear',
+  protect,
+  restrictTo('super_admin'),
+  activityLogController.clearActivityLogs
+);
+
 module.exports = router;
 
