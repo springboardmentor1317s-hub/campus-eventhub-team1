@@ -26,11 +26,25 @@ const createSuperAdmin = async () => {
   try {
     await connectToDb();
 
-    // Super Admin credentials
+    // Super Admin credentials from environment variables
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    const superAdminName = process.env.SUPER_ADMIN_NAME || 'Super Admin';
+
+    // Validate required environment variables
+    if (!superAdminEmail || !superAdminPassword) {
+      console.error('❌ Error: SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD must be set in .env file');
+      console.error('\nPlease add the following to your .env file:');
+      console.error('SUPER_ADMIN_EMAIL=your-email@example.com');
+      console.error('SUPER_ADMIN_PASSWORD=your-secure-password');
+      console.error('SUPER_ADMIN_NAME=Super Admin (optional)');
+      process.exit(1);
+    }
+
     const superAdminData = {
-      name: 'Super Admin',
-      email: 'superadmin@campuseventhub.com',
-      password: 'SuperAdmin@2025',
+      name: superAdminName,
+      email: superAdminEmail,
+      password: superAdminPassword,
       college: 'System Administrator',
       role: 'super_admin',
       approval_status: 'approved',
@@ -41,16 +55,15 @@ const createSuperAdmin = async () => {
     const existingSuperAdmin = await User.findOne({ email: superAdminData.email });
     
     if (existingSuperAdmin) {
-      console.log('Super Admin already exists!');
+      console.log('⚠️  Super Admin already exists with this email!');
       console.log('Email:', superAdminData.email);
-      console.log('Password: (unchanged)');
+      console.log('\nIf you need to reset the password, please do it through the application.');
     } else {
       // Create super admin
       const superAdmin = await User.create(superAdminData);
       console.log('✅ Super Admin created successfully!');
       console.log('📧 Email:', superAdminData.email);
-      console.log('🔑 Password:', superAdminData.password);
-      console.log('\n⚠️  IMPORTANT: Please change the password after first login!');
+      console.log('\n⚠️  IMPORTANT: Keep your credentials secure and change the password after first login!');
     }
 
     process.exit(0);

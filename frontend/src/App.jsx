@@ -7,8 +7,8 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { EventCreationForm } from './components/eventForm/EventCreationForm.jsx';
-import { EventRegistrationPage } from './components/eventForm/EventRegistrationPage.jsx';
+import { EventCreationForm } from './components/event-actions/EventCreationForm.jsx';
+import { EventRegistrationPage } from './components/event-actions/EventRegistrationPage.jsx';
 import Footer from './components/Footer';
 
 // Protected Route Component for any authenticated user

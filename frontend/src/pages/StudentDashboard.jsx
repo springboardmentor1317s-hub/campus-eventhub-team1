@@ -1,16 +1,25 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Calendar, Clock, MapPin, Users, Star, Filter, Search, Settings, User, LogOut, Heart, MessageCircle, Trophy, Code, Palette, BookOpen, ChevronRight, CheckCircle, AlertCircle, XCircle, Bell, X, BarChart3, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Star, Filter, X, Trophy, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Add useLocation
 import ProfileSettings from '../components/ProfileSettings';
-import Notifications from '../components/Notifications';
-import StudentMyRegistrations from '../components/StudentMyRegistrations';
-import StudentUpcomingEvents from '../components/StudentUpcomingEvents';
-import StudentQuickStats from '../components/StudentQuickStats';
+import { 
+  StudentMyRegistrations, 
+  StudentUpcomingEvents, 
+  StudentQuickStats, 
+  BrowseEvents, 
+  MyRegistrations, 
+  DashboardSection, 
+  ReviewSection,
+  HeaderSection 
+} from '../components/student';
+import DownloadTicketButton from '../components/event-actions/DownloadTicket';
+import { API_BASE_URL } from '../config/api';
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // Add this line
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -25,6 +34,10 @@ const StudentDashboard = () => {
   const [events, setEvents] = useState([]);
   const token = localStorage.getItem('token');
   const dropdownRef = useRef(null);
+  
+  // Pagination state for browse events
+  const [browsePage, setBrowsePage] = useState(1);
+  const BROWSE_EVENTS_PER_PAGE = 12;
   
   // Define the categories array
   const categories = useMemo(() => [
@@ -51,10 +64,11 @@ const StudentDashboard = () => {
         ...filters
       });
       
-      const response = await fetch(`http://localhost:4000/api/events?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/events?${queryParams}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       });
       
@@ -79,7 +93,7 @@ const StudentDashboard = () => {
           location: event.location,
           participants: event.current_registrations || 0,
           maxParticipants: event.registration_limit,
-          image: event.image ? `http://localhost:4000${event.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
+          image: event.image ? `${API_BASE_URL.replace('/api', '')}${event.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
           description: event.description,
           tags: event.tags || [],
           registrationDeadline: event.registration_deadline ? 
@@ -134,6 +148,13 @@ const StudentDashboard = () => {
 
     return matchesDate;
   }), [events, selectedDateFilter]);
+
+  // Paginate browse events
+  const paginatedBrowseEvents = useMemo(() => {
+    const startIndex = 0;
+    const endIndex = browsePage * BROWSE_EVENTS_PER_PAGE;
+    return filteredEvents.slice(startIndex, endIndex);
+  }, [filteredEvents, browsePage]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -326,7 +347,9 @@ const StudentDashboard = () => {
           const token = localStorage.getItem('token');
           if (!token) return;
           
-          const response = await fetch('http://localhost:4000/api/events/user/registrations', {
+          console.log('Fetching user registrations...');
+          
+          const response = await fetch(`${API_BASE_URL}/events/user/registrations`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -334,31 +357,44 @@ const StudentDashboard = () => {
           
           if (response.ok) {
             const data = await response.json();
+            console.log('Registration data received:', data);
+            
             if (data.success && data.data.registrations) {
-              // Extract events from registrations
-              const registeredEvents = data.data.registrations.map(reg => ({
-                id: reg.event_id._id,
-                title: reg.event_id.title,
-                college: reg.event_id.college_name,
-                category: reg.event_id.category,
-                date: reg.event_id.start_date.split('T')[0],
-                time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                }),
-                location: reg.event_id.location,
-                participants: reg.event_id.current_registrations || 0,
-                maxParticipants: reg.event_id.registration_limit,
-                image: reg.event_id.image ? `http://localhost:4000${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
-                description: reg.event_id.description,
-                tags: reg.event_id.tags || [],
-                registrationDeadline: reg.event_id.registration_deadline ? 
-                  reg.event_id.registration_deadline.split('T')[0] : 
-                  reg.event_id.start_date.split('T')[0],
-                fee: reg.event_id.price || 0,
-                status: reg.status === 'approved' ? 'approved' : reg.status === 'pending' ? 'pending' : 'rejected',
-                registrationStatus: reg.status
-              }));
+              // Filter out registrations with null event_id and extract events from registrations
+              const registeredEvents = data.data.registrations
+                .filter(reg => {
+                  if (!reg.event_id) {
+                    console.warn('Registration with null event_id found:', reg._id);
+                    return false;
+                  }
+                  return true;
+                })
+                .map(reg => ({
+                  id: reg.event_id._id,
+                  title: reg.event_id.title,
+                  college: reg.event_id.college_name,
+                  category: reg.event_id.category,
+                  date: reg.event_id.start_date.split('T')[0],
+                  time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  }),
+                  location: reg.event_id.location,
+                  participants: reg.event_id.current_registrations || 0,
+                  maxParticipants: reg.event_id.registration_limit,
+                  image: reg.event_id.image ? `${API_BASE_URL.replace('/api', '')}${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
+                  description: reg.event_id.description,
+                  tags: reg.event_id.tags || [],
+                  registrationDeadline: reg.event_id.registration_deadline ? 
+                    reg.event_id.registration_deadline.split('T')[0] : 
+                    reg.event_id.start_date.split('T')[0],
+                  fee: reg.event_id.price || 0,
+                  status: reg.status, // Keep the actual registration status
+                  registrationStatus: reg.status, // This should be 'pending', 'approved', or 'rejected'
+                  registrationId: reg._id
+                }));
+              
+              console.log('Processed registered events:', registeredEvents);
               setUserEvents(registeredEvents);
             }
           }
@@ -371,106 +407,107 @@ const StudentDashboard = () => {
     }
   }, [currentUser]); // Remove activeTab dependency - fetch on mount
 
+  // Add useEffect to handle navigation state
+  useEffect(() => {
+    // Check if we're being navigated to with a specific active tab
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent it from persisting on refresh
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location.state]);
+
+  // Add a function to refresh user registrations
+  const refreshUserRegistrations = useCallback(async () => {
+    if (currentUser?.id) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        console.log('Refreshing user registrations...');
+        
+        const response = await fetch(`${API_BASE_URL}/events/user/registrations`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Registration data refreshed:', data);
+          
+          if (data.success && data.data.registrations) {
+            // Filter out registrations with null event_id and extract events from registrations
+            const registeredEvents = data.data.registrations
+              .filter(reg => {
+                if (!reg.event_id) {
+                  console.warn('Registration with null event_id found:', reg._id);
+                  return false;
+                }
+                return true;
+              })
+              .map(reg => ({
+                id: reg.event_id._id,
+                title: reg.event_id.title,
+                college: reg.event_id.college_name,
+                category: reg.event_id.category,
+                date: reg.event_id.start_date.split('T')[0],
+                time: new Date(reg.event_id.start_date).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                }),
+                location: reg.event_id.location,
+                participants: reg.event_id.current_registrations || 0,
+                maxParticipants: reg.event_id.registration_limit,
+                image: reg.event_id.image ? `${API_BASE_URL.replace('/api', '')}${reg.event_id.image}` : 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400',
+                description: reg.event_id.description,
+                tags: reg.event_id.tags || [],
+                registrationDeadline: reg.event_id.registration_deadline ? 
+                  reg.event_id.registration_deadline.split('T')[0] : 
+                  reg.event_id.start_date.split('T')[0],
+                fee: reg.event_id.price || 0,
+                status: reg.status, 
+                registrationStatus: reg.status, 
+                registrationId: reg._id
+              }));
+            
+            console.log('Processed registered events:', registeredEvents);
+            setUserEvents(registeredEvents);
+          }
+        }
+      } catch (error) {
+        console.error('Error refreshing user registrations:', error);
+      }
+    }
+  }, [currentUser]);
+
+  // Update the existing useEffect
+  useEffect(() => {
+    refreshUserRegistrations();
+  }, [refreshUserRegistrations]);
+
+  // Add an interval to periodically refresh registration data
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshUserRegistrations();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [refreshUserRegistrations]);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">CampusEventHub</h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Notifications />
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="hidden md:block">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-700">{currentUser?.name || 'Student'}</p>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      currentUser?.role === 'student' 
-                        ? 'bg-green-100 text-green-800' 
-                        : currentUser?.role === 'college_admin' || currentUser?.role === 'admin'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {currentUser?.role === 'student' ? 'Student' : 
-                       currentUser?.role === 'college_admin' ? 'Admin' :
-                       currentUser?.role === 'super_admin' ? 'Super Admin' :
-                       'User'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">{currentUser?.college || 'Computer Science'}</p>
-                </div>
-                
-                {/* Settings Dropdown */}
-                <div className="relative" ref={dropdownRef}>
-                  <Settings 
-                    className="w-5 h-5 text-gray-400 hover:text-blue-600 cursor-pointer" 
-                    onClick={() => setShowDropdown(!showDropdown)}
-                  />
-                  
-                  {/* Dropdown Menu */}
-                  {showDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                      <button
-                        onClick={handleSettingsClick}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span>Account Settings</span>
-                      </button>
-                      <div className="border-t border-gray-200 my-1"></div>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation Tabs */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {[
-              { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
-              { id: 'browse', name: 'Browse Events', icon: Search },
-              { id: 'registered', name: 'My Registrations', icon: Calendar }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
+      {/* Use the HeaderSection component */}
+      <HeaderSection
+        currentUser={currentUser}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        showDropdown={showDropdown}
+        setShowDropdown={setShowDropdown}
+        dropdownRef={dropdownRef}
+        handleLogout={handleLogout}
+        handleSettingsClick={handleSettingsClick}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -485,266 +522,46 @@ const StudentDashboard = () => {
         )}
 
         {!showSettings && activeTab === 'dashboard' && (
-          <div className="space-y-8">
-            {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">Welcome back, {currentUser?.name || 'Student'}!</h1>
-                  <p className="text-blue-100 text-lg">Ready to discover amazing events?</p>
-                </div>
-                <div className="hidden md:block">
-                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                    <Calendar className="w-10 h-10 text-white" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <StudentQuickStats registrations={userEvents} allEvents={events} />
-            
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Recent Registrations */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Recent Registrations</h2>
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Calendar className="w-5 h-5" />
-                      <span className="text-sm font-medium">{userEvents.length} Total</span>
-                    </div>
-                  </div>
-                  
-                  {userEvents.length > 0 ? (
-                    <div className="space-y-4">
-                      {userEvents.slice(0, 3).map((event) => (
-                        <div
-                          key={event.id}
-                          className="group p-6 bg-gray-50 rounded-xl hover:bg-blue-50 transition-all cursor-pointer border border-gray-200 hover:border-blue-300"
-                          onClick={() => handleViewDetails(event)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  event.registrationStatus === 'approved' ? 'bg-green-500' :
-                                  event.registrationStatus === 'pending' ? 'bg-yellow-500' :
-                                  'bg-red-500'
-                                }`}></div>
-                                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                  {event.title}
-                                </h3>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                <div className="flex items-center">
-                                  <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-                                  {new Date(event.date).toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
-                                </div>
-                                <div className="flex items-center">
-                                  <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-                                  {event.college}
-                                </div>
-                                <div className="flex items-center">
-                                  <Users className="w-4 h-4 mr-2 text-blue-500" />
-                                  {event.category}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="ml-4 flex flex-col items-end gap-2">
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRegistrationStatusColor(event.registrationStatus)}`}>
-                                {event.registrationStatus.toUpperCase()}
-                              </span>
-                              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {userEvents.length > 3 && (
-                        <div className="text-center pt-4">
-                          <button
-                            onClick={() => setActiveTab('registered')}
-                            className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1 mx-auto"
-                          >
-                            View All Registrations
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="w-10 h-10 text-gray-400" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Registrations Yet</h3>
-                      <p className="text-gray-500 mb-6">Start exploring and register for exciting events!</p>
-                      <button
-                        onClick={() => setActiveTab('browse')}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                      >
-                        Browse Events
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Upcoming Events Sidebar */}
-              <div className="lg:col-span-1">
-                <StudentUpcomingEvents 
-                  events={events} 
-                  onViewDetails={handleViewDetails}
-                  onExploreMore={() => setActiveTab('browse')}
-                />
-              </div>
-            </div>
-          </div>
+          <DashboardSection
+            currentUser={currentUser}
+            userEvents={userEvents}
+            events={events}
+            handleViewDetails={handleViewDetails}
+            setActiveTab={setActiveTab}
+            getRegistrationStatusColor={getRegistrationStatusColor}
+          />
         )}
         
         {!showSettings && activeTab === 'browse' && (
-          <>
-            {/* Search and Filters */}
-            <div className="mb-8 bg-white p-4 sm:p-6 rounded-xl shadow-sm">
-              <div className="space-y-4">
-                {/* Search Bar */}
-                <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by event name, college, or location..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-                  />
-                </div>
-
-                {/* Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                  {/* All Events Button */}
-                  <button
-                    onClick={() => { setSearchTerm(''); setSelectedCategory('all'); setSelectedDateFilter('all'); }}
-                    className="bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base order-3 sm:order-1"
-                  >
-                    All Events
-                  </button>
-
-                  {/* Filter Dropdowns Container */}
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1 sm:flex-none order-1 sm:order-2">
-                    {/* Category Dropdown */}
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
-                    >
-                      <option value="all" disabled hidden>
-                        Filter by Category
-                      </option>
-                      {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>                    
-                    
-                    {/* Date Dropdown */}
-                    <select
-                      value={selectedDateFilter}                  
-                      onChange={(e) => setSelectedDateFilter(e.target.value)}
-                      className="w-full sm:w-auto px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base bg-white"
-                    >
-                      {/* Placeholder heading */}
-                      <option value="all" disabled hidden>                  
-                        Filter by Dates
-                      </option>
-                    
-                      {/* Default option */}                  
-                      <option value="all">All Dates</option>
-                    
-                      {/* Event dates */}
-                      {uniqueDates.map((date) => (
-                        <option key={date} value={date}>
-                          {new Date(date).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Events Grid */}
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading events...</p>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">Error Loading Events</h3>
-                  <p className="text-gray-500 mb-4">{error}</p>
-                  <button
-                    onClick={fetchEvents}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              </div>
-            ) : filteredEvents.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map(event => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-          </>
+          <BrowseEvents
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedDateFilter={selectedDateFilter}
+            setSelectedDateFilter={setSelectedDateFilter}
+            browsePage={browsePage}
+            setBrowsePage={setBrowsePage}
+            categories={categories}
+            uniqueDates={uniqueDates}
+            loading={loading}
+            error={error}
+            fetchEvents={fetchEvents}
+            paginatedBrowseEvents={paginatedBrowseEvents}
+            filteredEvents={filteredEvents}
+            EventCard={(props) => <EventCard {...props} />}
+            BROWSE_EVENTS_PER_PAGE={BROWSE_EVENTS_PER_PAGE}
+          />
         )}
         
         {!showSettings && activeTab === 'registered' && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Registrations</h2>
-            {userEvents.length > 0 ? (
-              <StudentMyRegistrations 
-                registrations={userEvents} 
-                onViewDetails={handleViewDetails}
-              />
-            ) : (
-              <div className="text-center py-12">
-                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Registrations Yet</h3>
-                <p className="text-gray-500 mb-6">Start exploring and register for exciting events!</p>
-                <button
-                  onClick={() => setActiveTab('browse')}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Browse Events
-                </button>
-              </div>
-            )}
-          </div>
+          <MyRegistrations 
+            userEvents={userEvents} 
+            onViewDetails={handleViewDetails}
+            onBrowseEvents={() => setActiveTab('browse')}
+            currentUser={currentUser}
+            handleRegister={handleRegister}
+          />
         )}
       </main>
 
@@ -760,93 +577,126 @@ const StudentDashboard = () => {
           onClick={closeEventDetails}
         >
           <div 
-            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-full h-[90vh] overflow-y-auto animate-fade-in mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="relative">
+            {/* Modal Header - Enhanced for full width */}
+            <div className="relative h-80 lg:h-96">
               <img 
                 src={selectedEvent.image} 
                 alt={selectedEvent.title}
-                className="w-full h-64 object-cover rounded-t-xl"
+                className="w-full h-full object-cover rounded-t-xl"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-t-xl"></div>
+              
+              {/* Close button */}
               <button
                 onClick={closeEventDetails}
-                className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
+                className="absolute top-6 right-6 p-3 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-lg"
               >
                 <X className="w-6 h-6 text-gray-800" />
               </button>
+              
+              {/* Registration status badge */}
               {selectedEvent.registrationStatus && (
-                <div className={`absolute top-4 left-4 px-4 py-2 rounded-full font-semibold text-sm backdrop-blur-sm border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                <div className={`absolute top-6 left-6 px-6 py-3 rounded-full font-bold text-lg backdrop-blur-sm border-2 shadow-lg ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
                   {selectedEvent.registrationStatus.toUpperCase()}
                 </div>
               )}
+
+              {/* Event title overlay */}
+              <div className="absolute bottom-6 left-6 right-6">
+                <h2 className="text-4xl lg:text-5xl font-bold text-white mb-2 leading-tight">
+                  {selectedEvent.title}
+                </h2>
+                <p className="text-xl text-gray-200 font-medium">
+                  {selectedEvent.college}
+                </p>
+              </div>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">{selectedEvent.title}</h2>
-              
-              {/* Event Info Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-4">
-                  <div className="flex items-center text-gray-700">
-                    <Calendar className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Date & Time</p>
-                      <p className="font-semibold">{new Date(selectedEvent.date).toLocaleDateString('en-US', { 
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })} at {selectedEvent.time}</p>
-                    </div>
+            {/* Modal Content - Better spacing for full width */}
+            <div className="p-8 lg:p-12">
+              {/* Event Info Grid - Optimized for full width */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                  <div className="flex items-center text-blue-600 mb-3">
+                    <Calendar className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Date & Time</p>
                   </div>
-                  
-                  <div className="flex items-center text-gray-700">
-                    <MapPin className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Location</p>
-                      <p className="font-semibold">{selectedEvent.location}</p>
-                      <p className="text-sm">{selectedEvent.college}</p>
-                    </div>
-                  </div>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {new Date(selectedEvent.date).toLocaleDateString('en-US', { 
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-gray-600 font-medium">{selectedEvent.time}</p>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center text-gray-700">
-                    <Users className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Participants</p>
-                      <p className="font-semibold">{selectedEvent.participants} / {selectedEvent.maxParticipants} registered</p>
-                    </div>
+                <div className="bg-green-50 p-6 rounded-2xl border border-green-100">
+                  <div className="flex items-center text-green-600 mb-3">
+                    <MapPin className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Location</p>
                   </div>
-                  
-                  <div className="flex items-center text-gray-700">
-                    <Trophy className="w-5 h-5 mr-3 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-gray-500">Category</p>
-                      <p className="font-semibold capitalize">{selectedEvent.category}</p>
-                    </div>
+                  <p className="font-bold text-gray-900 text-lg">{selectedEvent.location}</p>
+                  <p className="text-gray-600 font-medium">{selectedEvent.college}</p>
+                </div>
+                
+                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
+                  <div className="flex items-center text-purple-600 mb-3">
+                    <Users className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Participants</p>
                   </div>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {selectedEvent.participants}/{selectedEvent.maxParticipants}
+                  </p>
+                  <p className="text-gray-600 font-medium">Registered</p>
+                </div>
+                
+                <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                  <div className="flex items-center text-orange-600 mb-3">
+                    <Trophy className="w-6 h-6 mr-3" />
+                    <p className="text-sm font-semibold uppercase tracking-wide">Fee</p>
+                  </div>
+                  <p className="font-bold text-green-600 text-2xl">₹{selectedEvent.fee}</p>
+                  <p className="text-gray-600 font-medium">Registration</p>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">About This Event</h3>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {selectedEvent.description || 'No description available for this event.'}
-                </p>
+              {/* Category Section */}
+              <div className="bg-gray-50 p-6 rounded-2xl mb-8">
+                <div className="flex items-center text-gray-700 mb-3">
+                  <Trophy className="w-6 h-6 mr-3 text-blue-600" />
+                  <p className="text-sm font-semibold uppercase tracking-wide text-gray-600">Category</p>
+                </div>
+                <p className="font-bold text-gray-900 text-xl capitalize">{selectedEvent.category}</p>
+              </div>
+
+              {/* Description - Full width with better typography */}
+              <div className="mb-10">
+                <h3 className="text-3xl font-bold text-gray-900 mb-6 flex items-center">
+                  <div className="w-2 h-8 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full mr-4"></div>
+                  About This Event
+                </h3>
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    {selectedEvent.description || 'No description available for this event.'}
+                  </p>
+                </div>
               </div>
 
               {/* Tags */}
               {selectedEvent.tags && selectedEvent.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
+                <div className="mb-10">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <div className="w-2 h-6 bg-gradient-to-b from-green-600 to-blue-600 rounded-full mr-4"></div>
+                    Tags
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
                     {selectedEvent.tags.map((tag, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                      <span key={index} className="px-6 py-3 bg-blue-100 text-blue-800 text-lg font-medium rounded-full border border-blue-200">
                         {tag}
                       </span>
                     ))}
@@ -854,46 +704,75 @@ const StudentDashboard = () => {
                 </div>
               )}
 
-              {/* Fee */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-6">
-                <span className="text-gray-700 font-medium">Registration Fee</span>
-                <span className="text-2xl font-bold text-green-600">₹{selectedEvent.fee}</span>
-              </div>
-
-              {/* Action Button */}
-              <div className="flex gap-4">
-                {selectedEvent.registrationStatus ? (
-                  <div className="flex-1 text-center">
-                    <div className={`p-4 rounded-lg border-2 ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
-                      <p className="font-semibold text-lg">Registration Status</p>
-                      <p className="text-2xl font-bold mt-2">{selectedEvent.registrationStatus.toUpperCase()}</p>
-                      {selectedEvent.registrationStatus === 'approved' && (
-                        <p className="text-sm mt-2">You're all set! See you at the event.</p>
-                      )}
-                      {selectedEvent.registrationStatus === 'pending' && (
-                        <p className="text-sm mt-2">Your registration is awaiting admin approval.</p>
-                      )}
-                      {selectedEvent.registrationStatus === 'rejected' && (
-                        <p className="text-sm mt-2">Unfortunately, your registration was not approved.</p>
+              {/* Action Buttons - Better aligned for full width */}
+              <div className="bg-gray-50 p-8 rounded-2xl mb-10">
+                <div className="max-w-4xl mx-auto">
+                  {selectedEvent.registrationStatus ? (
+                    <div className="flex flex-col lg:flex-row gap-6 items-center">
+                      <div className="flex-1 w-full lg:w-auto">
+                        <div className={`p-8 rounded-2xl font-bold text-2xl text-center border-2 shadow-lg ${getRegistrationStatusColor(selectedEvent.registrationStatus)}`}>
+                          <div className="flex items-center justify-center gap-3">
+                            {selectedEvent.registrationStatus === 'approved' && <CheckCircle className="w-8 h-8" />}
+                            {selectedEvent.registrationStatus === 'pending' && <Clock className="w-8 h-8" />}
+                            {selectedEvent.registrationStatus === 'rejected' && <X className="w-8 h-8" />}
+                            <span>Registration {selectedEvent.registrationStatus.toUpperCase()}</span>
+                          </div>
+                          <p className="text-lg font-medium mt-2">
+                            {selectedEvent.registrationStatus === 'approved' && "You're all set for this event!"}
+                            {selectedEvent.registrationStatus === 'pending' && "Your registration is awaiting admin approval."}
+                            {selectedEvent.registrationStatus === 'rejected' && "Unfortunately, your registration was not approved."}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedEvent.registrationStatus === 'approved' && selectedEvent.registrationId && (
+                        <div className="w-full lg:w-auto">
+                          <DownloadTicketButton registrationId={selectedEvent.registrationId} />
+                        </div>
                       )}
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      closeEventDetails();
-                      handleRegister(selectedEvent.id);
-                    }}
-                    disabled={selectedEvent.participants >= selectedEvent.maxParticipants}
-                    className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-colors ${
-                      selectedEvent.participants >= selectedEvent.maxParticipants
-                        ? 'bg-red-100 text-red-700 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {selectedEvent.participants >= selectedEvent.maxParticipants ? 'Event Full' : 'Register Now'}
-                  </button>
-                )}
+                  ) : (
+                    <div className="text-center">
+                      <button
+                        onClick={() => {
+                          closeEventDetails();
+                          handleRegister(selectedEvent.id);
+                        }}
+                        disabled={selectedEvent.participants >= selectedEvent.maxParticipants}
+                        className={`px-12 py-6 rounded-2xl font-bold text-2xl transition-all transform hover:scale-105 shadow-lg ${
+                          selectedEvent.participants >= selectedEvent.maxParticipants
+                            ? 'bg-red-100 text-red-700 cursor-not-allowed border-2 border-red-300'
+                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-xl'
+                        }`}
+                      >
+                        {selectedEvent.participants >= selectedEvent.maxParticipants ? 
+                          'Event Full - Registration Closed' : 
+                          'Register for This Event'
+                        }
+                      </button>
+                      {selectedEvent.participants < selectedEvent.maxParticipants && (
+                        <p className="text-gray-600 mt-4 text-lg">
+                          Join {selectedEvent.participants} other participants
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t-2 border-gray-200 mb-10"></div>
+
+              {/* Reviews Section - Full width with better spacing */}
+              <div className="w-full">
+                <h3 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
+                  <div className="w-2 h-8 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full mr-4"></div>
+                  Event Reviews & Ratings
+                </h3>
+                <ReviewSection 
+                  eventId={selectedEvent.id} 
+                  currentUserId={currentUser?.id}
+                  showForm={true}
+                />
               </div>
             </div>
           </div>
@@ -903,5 +782,4 @@ const StudentDashboard = () => {
   );
 };
 
-// Default export for StudentDashboard component
 export default StudentDashboard;

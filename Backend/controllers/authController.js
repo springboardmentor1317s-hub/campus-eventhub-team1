@@ -1,5 +1,4 @@
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
@@ -294,6 +293,7 @@ exports.forgotPassword = async (req, res) => {
     if (!user) {
       throw new Error("User not found");
     }
+    
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
 
@@ -302,31 +302,26 @@ exports.forgotPassword = async (req, res) => {
     user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 min
     await user.save();
 
-    // Create reset link
-    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+    // Create reset link - Use FRONTEND_URL from env or fallback
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-    // Configure mail transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    // Send email
-    await transporter.sendMail({
-      from: `"Your App" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Password Reset Request",
-      html: `
-        <p>You requested a password reset.</p>
-        <p>Click below to reset your password (valid for 15 minutes):</p>
-        <a href="${resetLink}" target="_blank">${resetLink}</a>
-      `,
-    });
-
-    return res.status(200).json({ message: "Password reset email sent" });
+    // Send beautiful password reset email
+    const { sendPasswordResetEmail } = require('../utils/emailService');
+    const emailResult = await sendPasswordResetEmail(user, resetLink);
+    
+    if (emailResult.success) {
+      return res.status(200).json({ 
+        message: "Password reset email sent successfully. Please check your inbox." 
+      });
+    } else {
+      console.log('⚠️ Email not sent:', emailResult.message || emailResult.error);
+      // Still return success to user (token is saved in DB)
+      // User can use the reset page directly if they have the token
+      return res.status(200).json({ 
+        message: "Password reset initiated. If email is configured, you will receive instructions shortly." 
+      });
+    }
   } catch (err) {
     console.error("Forgot password error:", err);
     res.status(500).json({ error: err.message || "Server error" });
