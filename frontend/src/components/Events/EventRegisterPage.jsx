@@ -4,6 +4,7 @@ import {
   Calendar, Clock, MapPin, Users, DollarSign, Star, X, Check, 
   CheckCircle, XCircle, AlertCircle, Building, Tag, Loader
 } from 'lucide-react';
+import FeedbackSection from '../FeedbackSection.jsx';
 
 // Mock API calls - Replace with actual API integration
 const mockAPI = {
@@ -388,6 +389,7 @@ export const EventRegisterPage = () => {
             </div>
           </div>
         </div>
+          <FeedbackSection eventId={event.id} />
       </div>
 
       {/* Registration Modal */}
