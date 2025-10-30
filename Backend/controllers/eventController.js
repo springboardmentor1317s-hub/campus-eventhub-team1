@@ -508,7 +508,24 @@ exports.getEventStats = async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
+    let eventFilter = {};
+    let registrationFilter = {};
+
+    // College admin only sees their own events and related registrations
+    if (req.user.role === 'college_admin') {
+      eventFilter.created_by = req.user.id;
+      
+      // Get events created by this admin first
+      const adminEvents = await Event.find({ created_by: req.user.id }).select('_id');
+      const adminEventIds = adminEvents.map(event => event._id);
+      
+      // Filter registrations to only include those for admin's events
+      registrationFilter.event_id = { $in: adminEventIds };
+    }
+    // Super admin sees all events and registrations (no filter needed)
+
     const stats = await Event.aggregate([
+      { $match: eventFilter },
       {
         $group: {
           _id: null,
@@ -521,30 +538,49 @@ exports.getEventStats = async (req, res) => {
           },
           completed_events: {
             $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
-          },
-          total_registrations: { $sum: '$current_registrations' },
-          average_price: { $avg: '$price' }
+          }
         }
       }
     ]);
 
-    // Get category breakdown
-    const categoryStats = await Event.aggregate([
+    // Get registration stats with the same filter
+    const Registration = require('../models/Registration');
+    const registrationStats = await Registration.aggregate([
+      { $match: registrationFilter },
       {
         $group: {
-          _id: '$category',
-          count: { $sum: 1 },
-          total_registrations: { $sum: '$current_registrations' }
+          _id: null,
+          total_registrations: { $sum: 1 },
+          approved_registrations: {
+            $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] }
+          },
+          pending_registrations: {
+            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+          }
         }
-      },
-      { $sort: { count: -1 } }
+      }
     ]);
+
+    const eventData = stats[0] || {
+      total_events: 0,
+      upcoming_events: 0,
+      active_events: 0,
+      completed_events: 0
+    };
+
+    const registrationData = registrationStats[0] || {
+      total_registrations: 0,
+      approved_registrations: 0,
+      pending_registrations: 0
+    };
 
     res.status(200).json({
       success: true,
       data: {
-        overview: stats[0] || {},
-        categories: categoryStats
+        overview: {
+          ...eventData,
+          ...registrationData
+        }
       }
     });
 

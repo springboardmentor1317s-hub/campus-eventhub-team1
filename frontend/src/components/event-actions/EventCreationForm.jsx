@@ -5,6 +5,7 @@ import {
   Plus, X, Save, ArrowLeft, ArrowRight, Upload, AlertCircle, CheckCircle, 
   Trophy, Code, Palette, BookOpen, Building, Star
 } from 'lucide-react';
+import { API_BASE_URL } from '../../config/api';
 
 // Move form step components outside the main component to prevent re-creation
 const BasicInfoStep = ({ formData, errors, handleInputChange, handleCustomCollegeChange, handleFieldFocus, handleImageUpload, upColleges, eventCategories, titleRef }) => (
@@ -490,7 +491,7 @@ export const EventCreationForm = () => {
       }
       
       // Submit to backend API
-      const response = await fetch('http://localhost:4000/api/events/create', {
+      const response = await fetch(`${API_BASE_URL}/events/create`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

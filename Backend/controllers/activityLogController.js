@@ -92,6 +92,80 @@ exports.getLogStats = async (req, res) => {
   }
 };
 
+// Clear activity logs (super admin only)
+exports.clearActivityLogs = async (req, res) => {
+  try {
+    // Check if user is super admin
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Only super admins can clear activity logs' 
+      });
+    }
+
+    const { period } = req.body;
+    let query = {};
+
+    // Calculate date threshold based on period
+    if (period !== 'all') {
+      const now = new Date();
+      let monthsAgo;
+
+      switch (period) {
+        case '1-month':
+          monthsAgo = 1;
+          break;
+        case '3-months':
+          monthsAgo = 3;
+          break;
+        case '6-months':
+          monthsAgo = 6;
+          break;
+        default:
+          return res.status(400).json({ 
+            success: false,
+            message: 'Invalid period. Use "1-month", "3-months", "6-months", or "all"' 
+          });
+      }
+
+      const threshold = new Date(now);
+      threshold.setMonth(threshold.getMonth() - monthsAgo);
+      query.timestamp = { $lt: threshold };
+    }
+
+    // Delete logs based on query
+    const result = await ActivityLog.deleteMany(query);
+
+    // Create a log about this clearing action
+    await ActivityLog.create({
+      user_id: req.user.id,
+      action: 'logs_cleared',
+      description: `Cleared ${result.deletedCount} activity logs (${period === 'all' ? 'all logs' : `logs older than ${period}`})`,
+      details: {
+        period,
+        count: result.deletedCount
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully cleared ${result.deletedCount} activity logs`,
+      data: {
+        deletedCount: result.deletedCount,
+        period
+      }
+    });
+
+  } catch (error) {
+    console.error('Clear activity logs error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to clear activity logs',
+      error: error.message 
+    });
+  }
+};
+
 // Helper function to create activity log (can be used in other controllers)
 exports.createLog = async (userId, action, description, details = {}, ipAddress = null) => {
   try {
