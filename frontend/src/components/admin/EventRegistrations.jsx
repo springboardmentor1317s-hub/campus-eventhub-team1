@@ -10,6 +10,7 @@ const EventRegistrations = () => {
   const [selectedEvent, setSelectedEvent] = useState('All');
   const [events, setEvents] = useState([]);
   const [updateLoading, setUpdateLoading] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -150,6 +151,61 @@ const EventRegistrations = () => {
     }
   };
 
+  const handleExcelExport = async () => {
+    try {
+      setExportLoading(true);
+      
+      const queryParams = new URLSearchParams();
+      if (selectedEvent !== 'All') {
+        queryParams.append('eventId', selectedEvent);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/events/export/registrations/excel?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to export data');
+      }
+
+      // Get the Excel file
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename
+      const eventName = selectedEvent === 'All' ? 'All_Events' : 
+        events.find(e => e._id === selectedEvent)?.title.replace(/[^a-zA-Z0-9]/g, '_') || 'Event';
+      const fileName = `${eventName}_Registrations_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      link.download = fileName;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      // Show success message (you can replace with your toast system)
+      alert('Registration data exported successfully!');
+
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export data: ' + error.message);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'approved': return 'text-green-700 bg-green-100 border-green-200';
@@ -198,14 +254,38 @@ const EventRegistrations = () => {
           </select>
         </div>
         
-        <button
-          onClick={() => selectedEvent === 'All' ? fetchAllRegistrations() : fetchRegistrations(selectedEvent)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          disabled={loading}
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          {/* Excel Export Button */}
+          <button
+            onClick={handleExcelExport}
+            disabled={exportLoading || loading}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exportLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export Excel</span>
+              </>
+            )}
+          </button>
+          
+          {/* Refresh Button */}
+          <button
+            onClick={() => selectedEvent === 'All' ? fetchAllRegistrations() : fetchRegistrations(selectedEvent)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

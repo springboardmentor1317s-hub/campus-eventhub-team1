@@ -1,6 +1,7 @@
 const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const path = require('path');
+const XLSX = require('xlsx');
 
 // Initialize Stripe with better error handling
 let stripe = null;
@@ -592,5 +593,136 @@ exports.updateRegistrationStatus = async (req, res) => {
   } catch (error) {
     console.error('Update registration status error:', error);
     res.status(500).json({ error: 'Failed to update registration status' });
+  }
+};
+
+// Export registrations to Excel (admin only)
+exports.exportRegistrationsToExcel = async (req, res) => {
+  try {
+    const { eventId } = req.query; // Optional: filter by specific event
+    
+    // Check if user is admin
+    if (!['college_admin', 'super_admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    let registrationFilter = {};
+    
+    // Role-based filtering
+    if (req.user.role === 'college_admin') {
+      // Get events created by this admin
+      const adminEvents = await Event.find({ created_by: req.user.id }).select('_id');
+      const adminEventIds = adminEvents.map(event => event._id);
+      registrationFilter.event_id = { $in: adminEventIds };
+    }
+    
+    // If specific event requested
+    if (eventId) {
+      registrationFilter.event_id = eventId;
+    }
+
+    // Fetch registrations with populated data
+    const registrations = await Registration.find(registrationFilter)
+      .populate({
+        path: 'user_id',
+        select: 'name email college phone'
+      })
+      .populate({
+        path: 'event_id',
+        select: 'title category start_date end_date location college_name price registration_limit'
+      })
+      .sort({ timestamp: -1 });
+
+    // Filter out null references
+    const validRegistrations = registrations.filter(reg => 
+      reg.user_id !== null && reg.event_id !== null
+    );
+
+    // Prepare data for Excel
+    const excelData = validRegistrations.map((reg, index) => ({
+      'S.No': index + 1,
+      'Registration ID': reg._id.toString(),
+      'Student Name': reg.user_id.name,
+      'Email': reg.user_id.email,
+      'College': reg.user_id.college,
+      'Phone': reg.user_id.phone || 'N/A',
+      'Event Title': reg.event_id.title,
+      'Event Category': reg.event_id.category,
+      'Event Date': new Date(reg.event_id.start_date).toLocaleDateString('en-US'),
+      'Event Time': new Date(reg.event_id.start_date).toLocaleTimeString('en-US'),
+      'Event Location': reg.event_id.location,
+      'Event College': reg.event_id.college_name,
+      'Registration Fee': reg.event_id.price === 0 ? 'Free' : `₹${reg.event_id.price}`,
+      'Registration Status': reg.status.toUpperCase(),
+      'Ticket Available': reg.status === 'approved' ? 'YES' : 'NO',
+      'Ticket Download Link': reg.status === 'approved' 
+        ? `${process.env.FRONTEND_URL || 'http://localhost:5173'}/api/tickets/${reg._id}`
+        : 'N/A',
+      'Registration Date': new Date(reg.timestamp).toLocaleDateString('en-US'),
+      'Registration Time': new Date(reg.timestamp).toLocaleTimeString('en-US'),
+      'Payment ID': reg.stripe_payment_id || 'N/A',
+      'Event Capacity': reg.event_id.registration_limit,
+      'QR Code Data': JSON.stringify({
+        registrationId: reg._id,
+        eventId: reg.event_id._id,
+        userId: reg.user_id._id,
+        timestamp: reg.timestamp
+      })
+    }));
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths for better readability
+    const columnWidths = [
+      { wch: 5 },  // S.No
+      { wch: 25 }, // Registration ID
+      { wch: 20 }, // Student Name
+      { wch: 30 }, // Email
+      { wch: 25 }, // College
+      { wch: 15 }, // Phone
+      { wch: 30 }, // Event Title
+      { wch: 15 }, // Event Category
+      { wch: 12 }, // Event Date
+      { wch: 12 }, // Event Time
+      { wch: 25 }, // Event Location
+      { wch: 25 }, // Event College
+      { wch: 15 }, // Registration Fee
+      { wch: 15 }, // Registration Status
+      { wch: 15 }, // Ticket Available
+      { wch: 50 }, // Ticket Download Link
+      { wch: 15 }, // Registration Date
+      { wch: 15 }, // Registration Time
+      { wch: 20 }, // Payment ID
+      { wch: 15 }, // Event Capacity
+      { wch: 40 }  // QR Code Data
+    ];
+    
+    worksheet['!cols'] = columnWidths;
+
+    // Add worksheet to workbook
+    const sheetName = eventId ? `Event_Registrations_${eventId.slice(-6)}` : 'All_Registrations';
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    // Generate Excel file buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set response headers
+    const fileName = `registrations_${new Date().toISOString().split('T')[0]}_${Date.now()}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', excelBuffer.length);
+
+    // Send file
+    res.send(excelBuffer);
+
+  } catch (error) {
+    console.error('Excel export error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to export registrations to Excel',
+      message: error.message 
+    });
   }
 };
